@@ -3,6 +3,7 @@ import { FileItem, MediaTab, PdfMode } from '../types'
 import { formatBytes } from '../lib/utils'
 import { Play, Pause, Loader2, Flame } from 'lucide-react'
 import { CheckmarkSvg, RemoveImageSvg } from './CustomIcons'
+import { useLanguage } from '../i18n/LanguageContext'
 
 interface QueueSummaryProps {
   files: FileItem[]
@@ -27,6 +28,8 @@ export const QueueSummary: React.FC<QueueSummaryProps> = ({
   onClearCompleted,
   onClearAll,
 }) => {
+  const { t } = useLanguage()
+
   if (files.length === 0) return null
 
   const completedFiles = files.filter((f) => f.status === 'completed')
@@ -43,9 +46,8 @@ export const QueueSummary: React.FC<QueueSummaryProps> = ({
     <div className="bg-surface/95 backdrop-blur-xl border border-border rounded-2xl p-4 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4 transition-colors">
       <div className="flex items-center gap-4 w-full sm:w-auto">
         <div className="text-xs sm:text-sm">
-          <span className="text-gray-500 dark:text-gray-400">Fila: </span>
           <span className="font-semibold text-gray-900 dark:text-white">
-            {completedFiles.length} de {files.length} concluídos
+            {t('queue.completedCount', { completed: completedFiles.length, total: files.length })}
           </span>
         </div>
 
@@ -53,7 +55,7 @@ export const QueueSummary: React.FC<QueueSummaryProps> = ({
           <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-xs font-medium text-emerald-600 dark:text-emerald-400">
             <Flame className="h-3.5 w-3.5 fill-emerald-500/20" />
             <span>
-              Economia de {formatBytes(totalSavedBytes)} ({totalSavingsPercent}%)
+              {t('queue.savingsText', { bytes: formatBytes(totalSavedBytes), percent: totalSavingsPercent })}
             </span>
           </div>
         )}
@@ -68,7 +70,7 @@ export const QueueSummary: React.FC<QueueSummaryProps> = ({
             className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-xs text-gray-700 dark:text-gray-300 bg-background hover:bg-border/60 active:bg-border transition-all border border-border disabled:opacity-50 disabled:pointer-events-none"
           >
             <CheckmarkSvg className="h-4 w-4 text-emerald-500" />
-            <span>Limpar Concluídos</span>
+            <span>{t('queue.clearCompleted')}</span>
           </button>
         )}
 
@@ -79,7 +81,7 @@ export const QueueSummary: React.FC<QueueSummaryProps> = ({
           className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-xs text-rose-600 dark:text-rose-400 bg-background hover:bg-rose-500/10 active:bg-rose-500/20 transition-all border border-border disabled:opacity-50 disabled:pointer-events-none"
         >
           <RemoveImageSvg className="h-4 w-4 text-rose-500" />
-          <span>Limpar Tudo</span>
+          <span>{t('queue.clearAll')}</span>
         </button>
 
         {isProcessing && onTogglePause && (
@@ -93,7 +95,7 @@ export const QueueSummary: React.FC<QueueSummaryProps> = ({
             }`}
           >
             {isPaused ? <Play className="h-3.5 w-3.5 fill-current" /> : <Pause className="h-3.5 w-3.5" />}
-            <span>{isPaused ? 'Retomar Fila' : 'Pausar Fila'}</span>
+            <span>{isPaused ? t('queue.resume') : t('queue.pause')}</span>
           </button>
         )}
 
@@ -106,7 +108,7 @@ export const QueueSummary: React.FC<QueueSummaryProps> = ({
           {isProcessing ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              <span>{isPaused ? 'Fila Pausada' : 'Processando Fila...'}</span>
+              <span>{isPaused ? t('queue.paused') : t('queue.processing')}</span>
             </>
           ) : (
             <>
@@ -114,13 +116,15 @@ export const QueueSummary: React.FC<QueueSummaryProps> = ({
               <span>
                 {isPdf
                   ? pdfMode === 'compress_pdf'
-                    ? `Comprimir ${pendingFiles.length} PDF(s)`
+                    ? t('queue.compressPdfs', { count: pendingFiles.length })
                     : pdfMode === 'pdf_to_images'
-                    ? `Extrair Imagens (${pendingFiles.length} PDFs)`
+                    ? t('queue.extractPdfs', { count: pendingFiles.length })
                     : pdfMode === 'merge_split_pdf'
-                    ? `Processar (${pendingFiles.length} PDFs)`
-                    : `Gerar PDF com ${pendingFiles.length} imagens`
-                  : `Converter ${pendingFiles.length > 0 ? `(${pendingFiles.length})` : 'Todos'}`}
+                    ? t('queue.processPdfs', { count: pendingFiles.length })
+                    : t('queue.generatePdf', { count: pendingFiles.length })
+                  : pendingFiles.length > 0
+                  ? t('queue.convertCount', { count: pendingFiles.length })
+                  : t('queue.convertAll')}
               </span>
             </>
           )}

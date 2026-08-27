@@ -1,8 +1,9 @@
 import React from 'react'
 import { OutputSettingsState, NamingPattern } from '../types'
 import { DownloadSvg, OpenFolderSvg } from './CustomIcons'
-import { FileSignature, Tags } from 'lucide-react'
+import { Tags } from 'lucide-react'
 import { SearchableSelect, SelectOption } from './SearchableSelect'
+import { useLanguage } from '../i18n/LanguageContext'
 
 interface OutputSettingsProps {
   settings: OutputSettingsState
@@ -15,12 +16,14 @@ export const OutputSettings: React.FC<OutputSettingsProps> = ({
   onChange,
   disabled,
 }) => {
+  const { t } = useLanguage()
+
   const namingOptions: SelectOption[] = [
-    { value: 'original', label: 'Nome Original', desc: 'Ex: foto.webp' },
-    { value: '{name}_optimized', label: '{name}_optimized', desc: 'Ex: foto_optimized.webp', badge: 'Recomendado' },
-    { value: '{name}_{date}', label: '{name}_{data}', desc: 'Ex: foto_2026-08-27.webp' },
-    { value: '{counter}_{name}', label: '{contador}_{name}', desc: 'Ex: 01_foto.webp, 02_foto.webp' },
-    { value: 'custom', label: 'Padrão Personalizado...', desc: 'Use tags como {name}, {date}, {counter}' },
+    { value: 'original', label: t('common.original'), desc: 'photo.webp' },
+    { value: '{name}_optimized', label: '{name}_optimized', desc: 'photo_optimized.webp', badge: t('common.recommended') },
+    { value: '{name}_{date}', label: '{name}_{date}', desc: 'photo_2026-08-27.webp' },
+    { value: '{counter}_{name}', label: '{counter}_{name}', desc: '01_photo.webp, 02_photo.webp' },
+    { value: 'custom', label: t('common.custom'), desc: '{name}, {date}, {counter}' },
   ]
 
   const handleSelectCustomFolder = async () => {
@@ -43,7 +46,7 @@ export const OutputSettings: React.FC<OutputSettingsProps> = ({
         <div className="flex items-center gap-2">
           <DownloadSvg className="h-4 w-4" />
           <h2 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
-            Destino & Nomenclatura dos Arquivos
+            {t('outputSettings.title')}
           </h2>
         </div>
       </div>
@@ -66,10 +69,10 @@ export const OutputSettings: React.FC<OutputSettingsProps> = ({
           />
           <div className="text-xs">
             <span className="font-semibold block mb-0.5">
-              Pasta "optimized" no mesmo local
+              {t('outputSettings.sameFolder')}
             </span>
             <span className="text-[11px] text-gray-500 dark:text-gray-400">
-              Salva automaticamente dentro da subpasta <code className="bg-surface px-1 py-0.5 rounded border border-border">optimized/</code>.
+              {t('outputSettings.sameFolderDesc')}
             </span>
           </div>
         </label>
@@ -91,7 +94,7 @@ export const OutputSettings: React.FC<OutputSettingsProps> = ({
           />
           <div className="text-xs flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2 mb-0.5">
-              <span className="font-semibold">Pasta Personalizada</span>
+              <span className="font-semibold">{t('outputSettings.customFolder')}</span>
               {settings.mode === 'custom_directory' && (
                 <button
                   type="button"
@@ -100,12 +103,12 @@ export const OutputSettings: React.FC<OutputSettingsProps> = ({
                   className="flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline font-semibold"
                 >
                   <OpenFolderSvg className="h-3 w-3" />
-                  <span>Alterar</span>
+                  <span>{t('outputSettings.customFolderChange')}</span>
                 </button>
               )}
             </div>
-            <span className="text-[11px] text-gray-500 dark:text-gray-400 block truncate" title={settings.customPath || 'Nenhuma pasta selecionada'}>
-              {settings.customPath || 'Clique para escolher onde salvar todos os arquivos'}
+            <span className="text-[11px] text-gray-500 dark:text-gray-400 block truncate" title={settings.customPath || ''}>
+              {settings.customPath || t('outputSettings.customFolderSelectHint')}
             </span>
           </div>
         </label>
@@ -114,7 +117,7 @@ export const OutputSettings: React.FC<OutputSettingsProps> = ({
       <div className="pt-2 border-t border-border/80 grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
         <div className="space-y-1">
           <SearchableSelect
-            label="Padrão de Nome do Arquivo de Saída"
+            label={t('outputSettings.namingPatternLabel')}
             options={namingOptions}
             value={settings.namingPattern || 'original'}
             onChange={(val) => onChange({ ...settings, namingPattern: val as NamingPattern })}
@@ -126,7 +129,7 @@ export const OutputSettings: React.FC<OutputSettingsProps> = ({
           <div className="space-y-1">
             <label className="text-[11px] font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
               <Tags className="h-3 w-3 text-emerald-500" />
-              Template Personalizado ({'{name}'}, {'{date}'}, {'{counter}'})
+              {t('outputSettings.customTemplateLabel')}
             </label>
             <input
               type="text"

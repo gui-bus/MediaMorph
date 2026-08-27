@@ -29,12 +29,14 @@ import { VideoTrimmerModal } from './components/VideoTrimmerModal'
 import { PresetsModal } from './components/PresetsModal'
 import { extractPagesFromPdf } from './utils/pdfExtractor'
 import { playSuccessSound } from './lib/sound'
+import { useLanguage } from './i18n/LanguageContext'
 
 const STATS_STORAGE_KEY = 'mediamorph_lifetime_stats'
 const HISTORY_STORAGE_KEY = 'mediamorph_history_list'
 const THEME_STORAGE_KEY = 'mediamorph_theme_mode'
 
 export function App() {
+  const { t } = useLanguage()
   const [activeTab, setActiveTab] = useState<MediaTab>('images')
   const [files, setFiles] = useState<FileItem[]>([])
   const [isProcessing, setIsProcessing] = useState<boolean>(false)
@@ -676,8 +678,10 @@ export function App() {
           ;(window as any).electronAPI.notify(
             'MediaMorph',
             pdfSettings.mode === 'images_to_pdf'
-              ? 'PDF gerado com sucesso!'
-              : 'Operação de PDF concluída com sucesso!'
+              ? t('notifications.pdfGenerated')
+              : pdfSettings.mode === 'compress_pdf'
+              ? t('notifications.pdfCompressed')
+              : t('notifications.pdfExtracted')
           )
         }
       }
@@ -877,7 +881,7 @@ export function App() {
       if ((window as any).electronAPI?.notify) {
         ;(window as any).electronAPI.notify(
           'MediaMorph',
-          `Conversão de ${batchCompletedCount} arquivo(s) concluída com sucesso!`
+          t('notifications.batchCompleteBody', { count: batchCompletedCount })
         )
       }
     }

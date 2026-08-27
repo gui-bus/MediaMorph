@@ -1,8 +1,9 @@
 import React, { useState } from 'react'
 import { ImageGlobalSettings, ImageFormat, WatermarkPosition } from '../types'
-import { Shield, Sparkles, Stamp, RotateCw, FlipHorizontal, FlipVertical, Sliders, ChevronDown, ChevronUp } from 'lucide-react'
+import { Shield, Stamp, RotateCw, FlipHorizontal, FlipVertical, Sliders, ChevronDown, ChevronUp } from 'lucide-react'
 import { SearchableSelect, SelectOption } from './SearchableSelect'
 import { ImageSvg } from './CustomIcons'
+import { useLanguage } from '../i18n/LanguageContext'
 
 interface ImageSettingsProps {
   settings: ImageGlobalSettings
@@ -13,42 +14,35 @@ interface ImageSettingsProps {
 export const ImageSettings: React.FC<ImageSettingsProps> = ({ settings, onChange, disabled }) => {
   const [showWatermark, setShowWatermark] = useState(false)
   const [showAdjustments, setShowAdjustments] = useState(false)
+  const { t } = useLanguage()
 
   const formatOptions: SelectOption[] = [
-    { value: 'original', label: 'Manter Formato (Modo Compressor TinyPNG)', desc: 'Comprime PNG, JPG, WebP no mesmo formato com forte redução de MB/KB', badge: 'TinyPNG' },
-    { value: 'webp', label: 'WebP', desc: 'Formato moderno, ultraleve e recomendado para web', badge: 'Recomendado' },
-    { value: 'avif', label: 'AVIF', desc: 'Compressão extrema de nova geração (até 90% menor)', badge: 'Menor Tamanho' },
-    { value: 'ico', label: 'ICO (Ícone Windows)', desc: 'Gera arquivos .ico para programas e atalhos do Windows', badge: 'Ícone .ico' },
-    { value: 'jpeg', label: 'JPEG / JPG', desc: 'Compatibilidade universal com qualquer dispositivo', badge: 'Universal' },
-    { value: 'png', label: 'PNG', desc: 'Preserva transparência e nitidez máxima de vetores', badge: 'Transparência' },
-    { value: 'gif', label: 'GIF', desc: 'Imagens animadas para redes e chats', badge: 'Animado' },
-    { value: 'tiff', label: 'TIFF', desc: 'Qualidade profissional para impressão gráfica', badge: 'Gráfico' },
+    { value: 'original', label: t('imageSettings.formats.original'), desc: t('imageSettings.formats.originalDesc'), badge: 'TinyPNG' },
+    { value: 'webp', label: t('imageSettings.formats.webp'), desc: t('imageSettings.formats.webpDesc'), badge: t('common.recommended') },
+    { value: 'avif', label: t('imageSettings.formats.avif'), desc: t('imageSettings.formats.avifDesc'), badge: 'AVIF' },
+    { value: 'ico', label: t('imageSettings.formats.ico'), desc: t('imageSettings.formats.icoDesc'), badge: '.ico' },
+    { value: 'jpeg', label: t('imageSettings.formats.jpeg'), desc: t('imageSettings.formats.jpegDesc'), badge: t('common.universal') },
+    { value: 'png', label: t('imageSettings.formats.png'), desc: t('imageSettings.formats.pngDesc'), badge: 'PNG' },
+    { value: 'gif', label: t('imageSettings.formats.gif'), desc: t('imageSettings.formats.gifDesc'), badge: 'GIF' },
+    { value: 'tiff', label: t('imageSettings.formats.tiff'), desc: t('imageSettings.formats.tiffDesc'), badge: 'TIFF' },
   ]
 
   const presetOptions: SelectOption[] = [
-    { value: 'none', label: 'Tamanho Original (100%)', desc: 'Mantém a resolução exata' },
-    { value: 'story', label: 'Instagram Story / TikTok / Reels', desc: '1080 × 1920 px (Vertical 9:16)', badge: '1080x1920' },
-    { value: 'feed', label: 'Post Feed Quadrado', desc: '1080 × 1080 px (Quadrado 1:1)', badge: '1080x1080' },
-    { value: 'youtube', label: 'Thumbnail YouTube / Vídeo HD', desc: '1280 × 720 px (Widescreen 16:9)', badge: '1280x720' },
-    { value: 'banner', label: 'Banner Twitter / X / Cabeçalho', desc: '1500 × 500 px (Banner 3:1)', badge: '1500x500' },
-    { value: 'favicon', label: 'Favicon / Ícone de Site', desc: '32 × 32 px (Ícone compacto)', badge: '32x32' },
+    { value: 'none', label: t('imageSettings.presets.original'), desc: t('imageSettings.presets.originalDesc') },
+    { value: 'story', label: t('imageSettings.presets.story'), desc: t('imageSettings.presets.storyDesc'), badge: '1080x1920' },
+    { value: 'feed', label: t('imageSettings.presets.feed'), desc: t('imageSettings.presets.feedDesc'), badge: '1080x1080' },
+    { value: 'youtube', label: t('imageSettings.presets.youtube'), desc: t('imageSettings.presets.youtubeDesc'), badge: '1280x720' },
+    { value: 'banner', label: t('imageSettings.presets.banner'), desc: t('imageSettings.presets.bannerDesc'), badge: '1500x500' },
+    { value: 'favicon', label: t('imageSettings.presets.favicon'), desc: t('imageSettings.presets.faviconDesc'), badge: '32x32' },
   ]
 
   const watermarkPosOptions: SelectOption[] = [
-    { value: 'center', label: 'Centro da Imagem' },
-    { value: 'top-left', label: 'Superior Esquerdo' },
-    { value: 'top-right', label: 'Superior Direito' },
-    { value: 'bottom-left', label: 'Inferior Esquerdo' },
-    { value: 'bottom-right', label: 'Inferior Direito' },
+    { value: 'center', label: t('imageSettings.posCenter') },
+    { value: 'top-left', label: t('imageSettings.posTopLeft') },
+    { value: 'top-right', label: t('imageSettings.posTopRight') },
+    { value: 'bottom-left', label: t('imageSettings.posBottomLeft') },
+    { value: 'bottom-right', label: t('imageSettings.posBottomRight') },
   ]
-
-  const getQualityDescription = (q: number, lossless: boolean) => {
-    if (lossless) return 'Lossless (100% fiel ao original, sem perda de pixel)'
-    if (q >= 90) return 'Quase sem perdas (Arquivos moderados)'
-    if (q >= 75) return 'Recomendado (Excelente equilíbrio entre peso e nitidez)'
-    if (q >= 50) return 'Alta economia (Ideal para sites e mensagens)'
-    return 'Compressão agressiva (Arquivos minúsculos)'
-  }
 
   const handleSelectPreset = (val: string) => {
     switch (val) {
@@ -109,7 +103,7 @@ export const ImageSettings: React.FC<ImageSettingsProps> = ({ settings, onChange
         <div className="flex items-center gap-2">
           <ImageSvg className="h-4 w-4" />
           <h2 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
-            Configurações de Imagem
+            {t('imageSettings.title')}
           </h2>
         </div>
 
@@ -124,7 +118,7 @@ export const ImageSettings: React.FC<ImageSettingsProps> = ({ settings, onChange
             }`}
           >
             <Stamp className="h-3.5 w-3.5" />
-            <span>Marca d'Água</span>
+            <span>{t('imageSettings.watermarkBtn')}</span>
             {showWatermark ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
           </button>
 
@@ -138,7 +132,7 @@ export const ImageSettings: React.FC<ImageSettingsProps> = ({ settings, onChange
             }`}
           >
             <Sliders className="h-3.5 w-3.5" />
-            <span>Filtros & Ajustes</span>
+            <span>{t('imageSettings.filtersBtn')}</span>
             {showAdjustments ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
           </button>
         </div>
@@ -147,7 +141,7 @@ export const ImageSettings: React.FC<ImageSettingsProps> = ({ settings, onChange
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         <div className="space-y-2">
           <SearchableSelect
-            label="Formato de Conversão"
+            label={t('imageSettings.formatLabel')}
             options={formatOptions}
             value={settings.format}
             onChange={(val) => onChange({ ...settings, format: val as ImageFormat })}
@@ -157,7 +151,7 @@ export const ImageSettings: React.FC<ImageSettingsProps> = ({ settings, onChange
 
         <div className="space-y-2">
           <SearchableSelect
-            label="Dimensão / Preset de Redes Sociais"
+            label={t('imageSettings.presetLabel')}
             options={presetOptions}
             value={currentPresetValue}
             onChange={handleSelectPreset}
@@ -168,7 +162,7 @@ export const ImageSettings: React.FC<ImageSettingsProps> = ({ settings, onChange
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
-              Qualidade ({settings.lossless ? 'Sem Perdas' : `${settings.quality}%`})
+              {t('imageSettings.qualityLabel')} ({settings.lossless ? t('imageSettings.lossless') : `${settings.quality}%`})
             </label>
             <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono">
               {settings.lossless ? 'Lossless' : `${settings.quality}/100`}
@@ -186,12 +180,6 @@ export const ImageSettings: React.FC<ImageSettingsProps> = ({ settings, onChange
             className="w-full h-1.5 bg-background rounded-lg appearance-none cursor-pointer accent-emerald-500 disabled:opacity-40"
           />
 
-          <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">
-            {settings.format === 'ico'
-              ? 'Gera ícone Windows (.ico) com transparência e alta fidelidade'
-              : getQualityDescription(settings.quality, settings.lossless)}
-          </p>
-
           <div className="flex items-center justify-between gap-4 pt-1">
             <label className="flex items-center gap-2 cursor-pointer">
               <input
@@ -201,7 +189,7 @@ export const ImageSettings: React.FC<ImageSettingsProps> = ({ settings, onChange
                 onChange={(e) => onChange({ ...settings, lossless: e.target.checked })}
                 className="rounded border-border bg-background text-emerald-500 focus:ring-0 h-3.5 w-3.5"
               />
-              <span className="text-xs text-gray-700 dark:text-gray-300">Lossless</span>
+              <span className="text-xs text-gray-700 dark:text-gray-300">{t('imageSettings.lossless')}</span>
             </label>
 
             <label className="flex items-center gap-1.5 cursor-pointer">
@@ -214,7 +202,7 @@ export const ImageSettings: React.FC<ImageSettingsProps> = ({ settings, onChange
               />
               <span className="text-xs text-gray-700 dark:text-gray-300 flex items-center gap-1">
                 <Shield className="h-3 w-3 text-gray-500 dark:text-gray-400" />
-                Limpar EXIF
+                {t('imageSettings.stripExif')}
               </span>
             </label>
           </div>
@@ -227,7 +215,7 @@ export const ImageSettings: React.FC<ImageSettingsProps> = ({ settings, onChange
             <div className="flex items-center gap-2">
               <Stamp className="h-4 w-4 text-emerald-500" />
               <h3 className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider">
-                Marca d'Água em Lote
+                {t('imageSettings.watermarkTitle')}
               </h3>
             </div>
             <label className="flex items-center gap-2 cursor-pointer">
@@ -246,14 +234,14 @@ export const ImageSettings: React.FC<ImageSettingsProps> = ({ settings, onChange
                 }
                 className="rounded border-border bg-background text-emerald-500 focus:ring-0 h-4 w-4"
               />
-              <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">Ativar Marca d'Água</span>
+              <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">{t('imageSettings.enableWatermark')}</span>
             </label>
           </div>
 
           {settings.watermark?.enabled && (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 pt-2 border-t border-border/50">
               <div className="space-y-1.5">
-                <label className="text-[11px] font-medium text-gray-700 dark:text-gray-300">Tipo de Marca</label>
+                <label className="text-[11px] font-medium text-gray-700 dark:text-gray-300">{t('imageSettings.watermarkTitle')}</label>
                 <div className="flex rounded-lg bg-surface border border-border p-0.5">
                   <button
                     type="button"
@@ -262,7 +250,7 @@ export const ImageSettings: React.FC<ImageSettingsProps> = ({ settings, onChange
                       settings.watermark.type === 'text' ? 'bg-emerald-500 text-black shadow-sm font-bold' : 'text-gray-400 hover:text-white'
                     }`}
                   >
-                    Texto
+                    {t('imageSettings.typeText')}
                   </button>
                   <button
                     type="button"
@@ -271,17 +259,17 @@ export const ImageSettings: React.FC<ImageSettingsProps> = ({ settings, onChange
                       settings.watermark.type === 'image' ? 'bg-emerald-500 text-black shadow-sm font-bold' : 'text-gray-400 hover:text-white'
                     }`}
                   >
-                    Logo PNG
+                    {t('imageSettings.typeLogo')}
                   </button>
                 </div>
               </div>
 
               {settings.watermark.type === 'text' ? (
                 <div className="space-y-1.5">
-                  <label className="text-[11px] font-medium text-gray-700 dark:text-gray-300">Texto da Marca</label>
+                  <label className="text-[11px] font-medium text-gray-700 dark:text-gray-300">{t('imageSettings.watermarkText')}</label>
                   <input
                     type="text"
-                    placeholder="© Meu Negócio / @gui_bus"
+                    placeholder="© MediaMorph"
                     value={settings.watermark.text || ''}
                     onChange={(e) => onChange({ ...settings, watermark: { ...settings.watermark, text: e.target.value } })}
                     className="w-full bg-surface border border-border rounded-lg px-2.5 py-1.5 text-xs text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
@@ -289,21 +277,21 @@ export const ImageSettings: React.FC<ImageSettingsProps> = ({ settings, onChange
                 </div>
               ) : (
                 <div className="space-y-1.5">
-                  <label className="text-[11px] font-medium text-gray-700 dark:text-gray-300">Arquivo de Logo PNG</label>
+                  <label className="text-[11px] font-medium text-gray-700 dark:text-gray-300">{t('imageSettings.typeLogo')}</label>
                   <button
                     type="button"
                     onClick={handleSelectWatermarkLogo}
                     className="w-full bg-surface border border-border hover:border-emerald-500 rounded-lg px-2.5 py-1.5 text-xs text-gray-300 truncate text-left"
-                    title={settings.watermark.imagePath || 'Selecionar Logo...'}
+                    title={settings.watermark.imagePath || t('imageSettings.chooseLogo')}
                   >
-                    {settings.watermark.imagePath ? settings.watermark.imagePath.split('\\').pop() : '📁 Escolher Logo PNG...'}
+                    {settings.watermark.imagePath ? settings.watermark.imagePath.split('\\').pop() : t('imageSettings.chooseLogo')}
                   </button>
                 </div>
               )}
 
               <div className="space-y-1.5">
                 <SearchableSelect
-                  label="Posicionamento"
+                  label={t('imageSettings.position')}
                   options={watermarkPosOptions}
                   value={settings.watermark.position || 'center'}
                   onChange={(val) => onChange({ ...settings, watermark: { ...settings.watermark, position: val as WatermarkPosition } })}
@@ -313,7 +301,7 @@ export const ImageSettings: React.FC<ImageSettingsProps> = ({ settings, onChange
 
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-medium text-gray-700 dark:text-gray-300">Opacidade</label>
+                  <label className="text-[11px] font-medium text-gray-700 dark:text-gray-300">{t('imageSettings.opacity')}</label>
                   <span className="text-[10px] text-emerald-400 font-mono">{settings.watermark.opacity || 50}%</span>
                 </div>
                 <input
@@ -336,14 +324,14 @@ export const ImageSettings: React.FC<ImageSettingsProps> = ({ settings, onChange
           <div className="flex items-center gap-2">
             <Sliders className="h-4 w-4 text-emerald-500" />
             <h3 className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider">
-              Ajustes de Cor, Orientação & Densidade
+              {t('imageSettings.filtersTitle')}
             </h3>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="text-[11px] font-medium text-gray-700 dark:text-gray-300">Brilho</label>
+                <label className="text-[11px] font-medium text-gray-700 dark:text-gray-300">{t('imageSettings.brightness')}</label>
                 <span className="text-[10px] text-emerald-400 font-mono">
                   {settings.adjustments?.brightness ? `${settings.adjustments.brightness > 0 ? '+' : ''}${settings.adjustments.brightness}%` : '0%'}
                 </span>
@@ -366,7 +354,7 @@ export const ImageSettings: React.FC<ImageSettingsProps> = ({ settings, onChange
 
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="text-[11px] font-medium text-gray-700 dark:text-gray-300">Contraste</label>
+                <label className="text-[11px] font-medium text-gray-700 dark:text-gray-300">{t('imageSettings.contrast')}</label>
                 <span className="text-[10px] text-emerald-400 font-mono">
                   {settings.adjustments?.contrast ? `${settings.adjustments.contrast > 0 ? '+' : ''}${settings.adjustments.contrast}%` : '0%'}
                 </span>
@@ -389,7 +377,7 @@ export const ImageSettings: React.FC<ImageSettingsProps> = ({ settings, onChange
 
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="text-[11px] font-medium text-gray-700 dark:text-gray-300">Saturação</label>
+                <label className="text-[11px] font-medium text-gray-700 dark:text-gray-300">{t('imageSettings.saturation')}</label>
                 <span className="text-[10px] text-emerald-400 font-mono">
                   {settings.adjustments?.saturation ? `${settings.adjustments.saturation > 0 ? '+' : ''}${settings.adjustments.saturation}%` : '0%'}
                 </span>
@@ -411,7 +399,7 @@ export const ImageSettings: React.FC<ImageSettingsProps> = ({ settings, onChange
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-[11px] font-medium text-gray-700 dark:text-gray-300">Rotação & Espelho</label>
+              <label className="text-[11px] font-medium text-gray-700 dark:text-gray-300">{t('imageSettings.rotationMirror')}</label>
               <div className="flex items-center gap-1.5">
                 <button
                   type="button"
@@ -422,7 +410,7 @@ export const ImageSettings: React.FC<ImageSettingsProps> = ({ settings, onChange
                   className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium border ${
                     settings.adjustments?.rotate ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400' : 'bg-surface border-border text-gray-400'
                   }`}
-                  title="Girar 90 graus"
+                  title={t('imageSettings.rotateTitle')}
                 >
                   <RotateCw className="h-3.5 w-3.5" />
                   <span>{settings.adjustments?.rotate || 0}°</span>
@@ -439,7 +427,7 @@ export const ImageSettings: React.FC<ImageSettingsProps> = ({ settings, onChange
                   className={`p-1 rounded-md text-xs border ${
                     settings.adjustments?.flipHorizontal ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400' : 'bg-surface border-border text-gray-400'
                   }`}
-                  title="Espelhar Horizontalmente"
+                  title={t('imageSettings.flipH')}
                 >
                   <FlipHorizontal className="h-3.5 w-3.5" />
                 </button>
@@ -455,7 +443,7 @@ export const ImageSettings: React.FC<ImageSettingsProps> = ({ settings, onChange
                   className={`p-1 rounded-md text-xs border ${
                     settings.adjustments?.flipVertical ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400' : 'bg-surface border-border text-gray-400'
                   }`}
-                  title="Espelhar Verticalmente"
+                  title={t('imageSettings.flipV')}
                 >
                   <FlipVertical className="h-3.5 w-3.5" />
                 </button>

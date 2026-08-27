@@ -2,6 +2,7 @@ import React, { useEffect } from 'react'
 import { HistoryItem } from '../types'
 import { formatBytes } from '../lib/utils'
 import { X, History, Trash2, FolderSearch, Flame, Clock } from 'lucide-react'
+import { useLanguage } from '../i18n/LanguageContext'
 
 interface HistoryDrawerProps {
   isOpen: boolean
@@ -16,6 +17,8 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
   history,
   onClearHistory,
 }) => {
+  const { t } = useLanguage()
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
@@ -37,12 +40,11 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-surface border-l border-border w-full max-w-md h-full flex flex-col shadow-2xl animate-in slide-in-from-right duration-300">
-
         <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-surface">
           <div className="flex items-center gap-2">
-            <History className="h-4 w-4 text-primary-400" />
-            <h3 className="text-sm font-bold text-white">Histórico de Conversões</h3>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-background border border-border text-gray-400">
+            <History className="h-4 w-4 text-emerald-500" />
+            <h3 className="text-sm font-bold text-gray-900 dark:text-white">{t('history.title')}</h3>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-background border border-border text-gray-500 dark:text-gray-400">
               {history.length}
             </span>
           </div>
@@ -52,7 +54,7 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
               <button
                 onClick={onClearHistory}
                 className="p-1.5 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                title="Limpar histórico"
+                title={t('history.clearAll')}
               >
                 <Trash2 className="h-4 w-4" />
               </button>
@@ -70,10 +72,7 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
           {history.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center p-6 text-gray-500 space-y-2">
               <Clock className="h-10 w-10 text-gray-600 stroke-[1.5]" />
-              <p className="text-xs">Nenhuma conversão registrada ainda.</p>
-              <span className="text-[11px] text-gray-600">
-                Os arquivos convertidos aparecerão aqui automaticamente.
-              </span>
+              <p className="text-xs">{t('history.empty')}</p>
             </div>
           ) : (
             history.map((item) => (
@@ -82,17 +81,17 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
                 className="bg-background/80 border border-border/80 rounded-xl p-3.5 hover:border-border transition-all flex items-center justify-between gap-3 group"
               >
                 <div className="min-w-0 flex-1">
-                  <h4 className="text-xs font-semibold text-gray-200 truncate" title={item.name}>
+                  <h4 className="text-xs font-semibold text-gray-900 dark:text-gray-200 truncate" title={item.name}>
                     {item.name}
                   </h4>
-                  <div className="flex items-center gap-2 mt-1 text-[11px] text-gray-400">
+                  <div className="flex items-center gap-2 mt-1 text-[11px] text-gray-500 dark:text-gray-400">
                     <span>{formatBytes(item.originalSize)}</span>
                     <span className="text-gray-600">➔</span>
-                    <span className="text-gray-200 font-mono font-medium">
+                    <span className="text-gray-900 dark:text-gray-200 font-mono font-medium">
                       {formatBytes(item.newSize)}
                     </span>
                     {item.savingsPercent > 0 && (
-                      <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.2 rounded-full">
+                      <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.2 rounded-full">
                         <Flame className="h-2.5 w-2.5" />
                         -{item.savingsPercent}%
                       </span>
@@ -105,10 +104,10 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
 
                 <button
                   onClick={() => handleRevealInExplorer(item.outputPath)}
-                  className="p-2 rounded-lg bg-surface border border-border text-gray-300 hover:text-white hover:border-primary-500/40 text-xs transition-all shrink-0"
-                  title="Abrir no Windows Explorer"
+                  className="p-2 rounded-lg bg-surface border border-border text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:border-emerald-500/40 text-xs transition-all shrink-0"
+                  title={t('history.reopen')}
                 >
-                  <FolderSearch className="h-4 w-4 text-primary-400" />
+                  <FolderSearch className="h-4 w-4 text-emerald-500" />
                 </button>
               </div>
             ))

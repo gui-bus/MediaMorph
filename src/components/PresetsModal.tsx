@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
-import { X, Bookmark, Plus, Trash2, Check, Sparkles } from 'lucide-react'
+import { X, Bookmark, Plus, Trash2, Check } from 'lucide-react'
 import { UserPreset, MediaTab } from '../types'
+import { useLanguage } from '../i18n/LanguageContext'
 
 interface PresetsModalProps {
   isOpen: boolean
@@ -19,6 +20,7 @@ export const PresetsModal: React.FC<PresetsModalProps> = ({
   currentSettings,
   onApplyPreset,
 }) => {
+  const { t } = useLanguage()
   const [presets, setPresets] = useState<UserPreset[]>([])
   const [newPresetName, setNewPresetName] = useState('')
   const [appliedId, setAppliedId] = useState<string | null>(null)
@@ -58,113 +60,120 @@ export const PresetsModal: React.FC<PresetsModalProps> = ({
   const handleApply = (preset: UserPreset) => {
     onApplyPreset(preset.settings)
     setAppliedId(preset.id)
-    setTimeout(() => {
-      onClose()
-    }, 400)
+    setTimeout(() => setAppliedId(null), 1500)
   }
 
-  const tabPresets = presets.filter((p) => p.category === activeTab)
-
-  const getCategoryLabel = (tab: MediaTab) => {
-    switch (tab) {
-      case 'images': return 'Imagens'
-      case 'videos': return 'Vídeos'
-      case 'audio': return 'Áudios'
-      case 'pdf': return 'PDFs'
-    }
-  }
+  const categoryPresets = presets.filter((p) => p.category === activeTab)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="bg-surface border border-border rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-          <div className="flex items-center gap-2">
-            <Bookmark className="h-4 w-4 text-emerald-500" />
-            <h3 className="text-sm font-bold text-white">
-              Predefinições ({getCategoryLabel(activeTab)})
-            </h3>
+      <div
+        className="relative w-full max-w-lg bg-surface border border-border rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-surface">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/30">
+              <Bookmark className="h-5 w-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-gray-900 dark:text-white">
+                {t('presetsModal.title')}
+              </h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">
+                {t(`header.${activeTab}`)}
+              </p>
+            </div>
           </div>
+
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-gray-400 hover:text-white hover:bg-background transition-colors"
+            className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-surface-hover transition-colors"
           >
-            <X className="h-4 w-4" />
+            <X className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="p-5 space-y-4 overflow-y-auto flex-1">
-          <div className="space-y-2 bg-background/60 p-3 rounded-xl border border-border">
-            <label className="text-xs font-semibold text-gray-300 block">
-              Salvar Configurações Atuais como Predefinição
-            </label>
-            <div className="flex items-center gap-2">
+        <div className="p-6 space-y-5 overflow-y-auto flex-1">
+          <div className="p-4 rounded-xl bg-background/80 border border-border space-y-3">
+            <span className="text-xs font-semibold text-gray-800 dark:text-gray-200 block">
+              {t('presetsModal.saveCurrentTitle')}
+            </span>
+
+            <div className="flex gap-2">
               <input
                 type="text"
-                placeholder="Ex: Minhas Fotos Ecommerce 800x800"
+                placeholder={t('presetsModal.namePlaceholder')}
                 value={newPresetName}
                 onChange={(e) => setNewPresetName(e.target.value)}
-                className="flex-1 bg-surface border border-border rounded-lg px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500"
+                onKeyDown={(e) => e.key === 'Enter' && handleSaveCurrent()}
+                className="flex-1 bg-surface border border-border rounded-xl px-3 py-2 text-xs text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-none focus:border-emerald-500"
               />
               <button
                 type="button"
                 onClick={handleSaveCurrent}
                 disabled={!newPresetName.trim()}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-500 text-black text-xs font-bold hover:bg-emerald-400 disabled:opacity-40 transition-all shrink-0"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 disabled:opacity-40 text-white text-xs font-bold transition-all shrink-0"
               >
-                <Plus className="h-3.5 w-3.5" />
-                Salvar
+                <Plus className="h-4 w-4" />
+                <span>{t('presetsModal.saveBtn')}</span>
               </button>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider block">
-              Suas Predefinições Salvas ({tabPresets.length})
+          <div className="space-y-2.5">
+            <span className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider block px-1">
+              {t('presetsModal.savedListTitle')} ({categoryPresets.length})
             </span>
 
-            {tabPresets.length === 0 ? (
-              <div className="py-8 text-center text-xs text-gray-500 border border-dashed border-border rounded-xl">
-                Nenhum preset salvo para {getCategoryLabel(activeTab)}. Configure acima e salve com 1 clique!
+            {categoryPresets.length === 0 ? (
+              <div className="p-6 text-center rounded-xl bg-background/40 border border-dashed border-border text-xs text-gray-500">
+                {t('presetsModal.emptyList')}
               </div>
             ) : (
-              <div className="space-y-2">
-                {tabPresets.map((p) => (
-                  <div
-                    key={p.id}
-                    className="flex items-center justify-between p-3 rounded-xl bg-background border border-border hover:border-emerald-500/50 transition-all group"
-                  >
-                    <div className="min-w-0 flex-1 mr-3">
-                      <span className="text-xs font-bold text-white block truncate">{p.name}</span>
-                      <span className="text-[10px] text-gray-500 font-mono">
-                        {new Date(p.createdAt).toLocaleDateString()} • {p.category}
-                      </span>
-                    </div>
+              <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                {categoryPresets.map((preset) => {
+                  const isApplied = appliedId === preset.id
+                  return (
+                    <div
+                      key={preset.id}
+                      className="flex items-center justify-between p-3 rounded-xl bg-background/80 border border-border hover:border-gray-400 dark:hover:border-gray-500 transition-all group"
+                    >
+                      <div className="min-w-0 flex-1 mr-3">
+                        <span className="text-xs font-semibold text-gray-900 dark:text-white block truncate">
+                          {preset.name}
+                        </span>
+                        <span className="text-[10px] text-gray-500 font-mono">
+                          {new Date(preset.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
 
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => handleApply(p)}
-                        className={`flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-                          appliedId === p.id
-                            ? 'bg-emerald-500 text-black'
-                            : 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500 hover:text-black'
-                        }`}
-                      >
-                        {appliedId === p.id ? <Check className="h-3 w-3" /> : <Sparkles className="h-3 w-3" />}
-                        {appliedId === p.id ? 'Aplicado!' : 'Carregar'}
-                      </button>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handleApply(preset)}
+                          className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                            isApplied
+                              ? 'bg-emerald-500 text-white'
+                              : 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500 hover:text-white'
+                          }`}
+                        >
+                          {isApplied ? <Check className="h-3.5 w-3.5" /> : null}
+                          <span>{isApplied ? t('presetsModal.appliedBtn') : t('presetsModal.loadBtn')}</span>
+                        </button>
 
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(p.id)}
-                        className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-surface transition-colors"
-                        title="Excluir Preset"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(preset.id)}
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                          title={t('common.delete')}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>

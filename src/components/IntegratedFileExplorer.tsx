@@ -22,6 +22,7 @@ import {
   DownloadSvg,
   RefreshSvg,
 } from './CustomIcons'
+import { useLanguage } from '../i18n/LanguageContext'
 
 interface SystemLocation {
   name: string
@@ -47,6 +48,7 @@ interface IntegratedFileExplorerProps {
 }
 
 export const IntegratedFileExplorer: React.FC<IntegratedFileExplorerProps> = ({ onAddFiles }) => {
+  const { t } = useLanguage()
   const [locations, setLocations] = useState<SystemLocation[]>([])
   const [currentPath, setCurrentPath] = useState<string>('')
   const [history, setHistory] = useState<string[]>([])
@@ -67,49 +69,61 @@ export const IntegratedFileExplorer: React.FC<IntegratedFileExplorerProps> = ({ 
     loadLocations()
   }, [])
 
-  const navigateTo = async (targetPath: string, pushHistory = true) => {
-    if (!targetPath || !(window as any).electronAPI) return
+  const navigateTo = async (dirPath: string) => {
+    if (!dirPath || isLoading) return
     setIsLoading(true)
-    try {
-      const dirItems = await (window as any).electronAPI.listDirectory(targetPath)
-      setItems(dirItems || [])
-      if (pushHistory && currentPath && currentPath !== targetPath) {
-        setHistory((prev) => [...prev, currentPath])
-      }
-      setCurrentPath(targetPath)
-      setSearch('')
-    } catch (err) {
-      console.error('Erro ao listar pasta:', err)
-    } finally {
-      setIsLoading(false)
+
+    if (currentPath && currentPath !== dirPath) {
+      setHistory((prev) => [...prev, currentPath])
     }
+    setCurrentPath(dirPath)
+
+    if ((window as any).electronAPI) {
+      const dirItems = await (window as any).electronAPI.listDirectory(dirPath)
+      setItems(dirItems || [])
+    }
+    setIsLoading(false)
   }
 
   const handleGoBack = () => {
     if (history.length === 0) return
     const prev = history[history.length - 1]
-    setHistory((prevHist) => prevHist.slice(0, -1))
-    navigateTo(prev, false)
+    setHistory((h) => h.slice(0, -1))
+    setCurrentPath(prev)
+    if ((window as any).electronAPI) {
+      setIsLoading(true)
+      ;(window as any).electronAPI.listDirectory(prev).then((dirItems: FileItemInfo[]) => {
+        setItems(dirItems || [])
+        setIsLoading(false)
+      })
+    }
   }
 
   const handleGoUp = () => {
     if (!currentPath) return
-    const parts = currentPath.split(/[\\\/]/).filter(Boolean)
-    if (parts.length <= 1) return
-    parts.pop()
-    const parentPath = currentPath.includes('\\') ? parts.join('\\') : `/${parts.join('/')}`
-    navigateTo(parentPath)
+    const lastSlash = Math.max(currentPath.lastIndexOf('\\'), currentPath.lastIndexOf('/'))
+    if (lastSlash > 0) {
+      const parent = currentPath.substring(0, lastSlash)
+      navigateTo(parent.length === 2 && parent[1] === ':' ? `${parent}\\` : parent)
+    }
   }
 
   const handleRefresh = () => {
-    navigateTo(currentPath, false)
+    if (currentPath) {
+      setIsLoading(true)
+      if ((window as any).electronAPI) {
+        ;(window as any).electronAPI.listDirectory(currentPath).then((dirItems: FileItemInfo[]) => {
+          setItems(dirItems || [])
+          setIsLoading(false)
+        })
+      }
+    }
   }
 
-  const handleAddAllMedia = async () => {
-    if (!currentPath || !(window as any).electronAPI) return
-    const scanned = await (window as any).electronAPI.scanDirectory(currentPath)
-    if (scanned && scanned.length > 0) {
-      onAddFiles(scanned)
+  const handleAddAllMedia = () => {
+    const mediaOnly = filteredItems.filter((i) => !i.isDirectory)
+    if (mediaOnly.length > 0) {
+      onAddFiles(mediaOnly)
     }
   }
 
@@ -139,28 +153,27 @@ export const IntegratedFileExplorer: React.FC<IntegratedFileExplorerProps> = ({ 
 
   return (
     <div className="bg-surface border border-border rounded-2xl flex flex-col h-full overflow-hidden shadow-sm transition-colors sticky top-20">
-
       <div className="p-3.5 px-4 border-b border-border flex items-center justify-between bg-surface/90">
         <div className="flex items-center gap-2">
           <OpenFolderSvg className="h-4 w-4" />
           <h3 className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider">
-            Explorador Integrado
+            {t('explorer.title')}
           </h3>
         </div>
 
         <button
           onClick={handleAddAllMedia}
           className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-[11px] transition-all shadow-sm shrink-0"
-          title="Adicionar todas as imagens e vídeos desta pasta para a fila"
+          title={t('explorer.scanFolder')}
         >
           <Layers className="h-3 w-3" />
-          <span>+ Pasta Inteira</span>
+          <span>+ {t('explorer.scanFolder')}</span>
         </button>
       </div>
 
       <div className="p-3 border-b border-border bg-background/50">
         <span className="text-[10px] uppercase font-bold text-gray-500 dark:text-gray-400 tracking-wider block mb-1.5 px-0.5">
-          Acesso Rápido
+          {t('explorer.shortcuts')}
         </span>
         <div className="grid grid-cols-2 gap-1.5">
           {locations.map((loc) => {
@@ -188,7 +201,7 @@ export const IntegratedFileExplorer: React.FC<IntegratedFileExplorerProps> = ({ 
         <button
           disabled={history.length === 0}
           onClick={handleGoBack}
-          className="p-1.5 rounded-lg border border-border bg-background hover:bg-surface-hover disabled:opacity-30 transition-all text-gray-600 dark:text-gray-300 shrink-0"
+          className="p-1.5 rounded-lg border border-border bg-background hover:bg-surface-hover disabled:opacity-30 disabled:pointer-events-none transition-all text-gray-600 dark:text-gray-300 shrink-0"
           title="Voltar"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
@@ -220,7 +233,7 @@ export const IntegratedFileExplorer: React.FC<IntegratedFileExplorerProps> = ({ 
           <Search className="h-3.5 w-3.5 text-gray-400 absolute left-2.5 top-2" />
           <input
             type="text"
-            placeholder="Filtrar nesta pasta..."
+            placeholder={t('explorer.searching')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full bg-surface border border-border rounded-xl pl-8 pr-2.5 py-1.5 text-xs text-gray-900 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:border-emerald-500 shadow-inner"
@@ -231,15 +244,14 @@ export const IntegratedFileExplorer: React.FC<IntegratedFileExplorerProps> = ({ 
       <div className="flex-1 overflow-y-auto p-2.5 space-y-1.5 min-h-[380px] max-h-[calc(100vh-320px)]">
         {isLoading ? (
           <div className="py-12 text-center text-xs text-gray-500">
-            Carregando pasta...
+            {t('common.loading')}
           </div>
         ) : filteredItems.length === 0 ? (
           <div className="py-12 text-center text-xs text-gray-500">
-            Nenhuma mídia compatível nesta pasta.
+            {t('explorer.emptyDir')}
           </div>
         ) : (
           <>
-
             {folders.map((folder) => (
               <div
                 key={folder.path}
@@ -289,10 +301,10 @@ export const IntegratedFileExplorer: React.FC<IntegratedFileExplorerProps> = ({ 
                 <button
                   onClick={() => onAddFiles([file])}
                   className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500 hover:text-white text-xs font-semibold transition-all shrink-0 shadow-sm"
-                  title="Adicionar à fila de conversão"
+                  title={t('explorer.addSelected')}
                 >
                   <Plus className="h-3 w-3" />
-                  <span>Fila</span>
+                  <span>+</span>
                 </button>
               </div>
             ))}

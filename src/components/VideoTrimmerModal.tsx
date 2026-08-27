@@ -6,6 +6,7 @@ import {
   Check,
 } from 'lucide-react'
 import { CloseSvg, UndoSvg, ScissorSvg } from './CustomIcons'
+import { useLanguage } from '../i18n/LanguageContext'
 
 interface VideoTrimmerModalProps {
   filePath: string
@@ -24,6 +25,7 @@ export const VideoTrimmerModal: React.FC<VideoTrimmerModalProps> = ({
   onSave,
   onClose,
 }) => {
+  const { t } = useLanguage()
   const videoRef = useRef<HTMLVideoElement>(null)
   const [duration, setDuration] = useState<number>(0)
   const [currentTime, setCurrentTime] = useState<number>(0)
@@ -58,37 +60,26 @@ export const VideoTrimmerModal: React.FC<VideoTrimmerModalProps> = ({
     const h = Math.floor(seconds / 3600)
     const m = Math.floor((seconds % 3600) / 60)
     const s = Math.floor(seconds % 60)
-    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+    const ms = Math.floor((seconds % 1) * 1000)
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(ms).padStart(3, '0')}`
   }
 
   useEffect(() => {
-    async function loadMeta() {
-      if ((window as any).electronAPI?.getVideoMetadata) {
-        try {
-          const meta = await (window as any).electronAPI.getVideoMetadata(filePath)
-          if (meta && meta.duration > 0) {
-            setDuration(meta.duration)
-            const parsedStart = parseTimeToSeconds(initialTrimStart)
-            const parsedEnd = initialTrimEnd ? parseTimeToSeconds(initialTrimEnd) : meta.duration
-            setTrimStartSec(Math.min(parsedStart, meta.duration))
-            setTrimEndSec(Math.min(parsedEnd || meta.duration, meta.duration))
-          }
-        } catch (err) {
-          console.error('Erro ao ler metadados do vídeo:', err)
-        }
-      }
+    if (initialTrimStart) {
+      setTrimStartSec(parseTimeToSeconds(initialTrimStart))
     }
-    loadMeta()
-  }, [filePath])
+    if (initialTrimEnd) {
+      setTrimEndSec(parseTimeToSeconds(initialTrimEnd))
+    }
+  }, [initialTrimStart, initialTrimEnd])
 
   const handleLoadedMetadata = () => {
     if (videoRef.current) {
       const dur = videoRef.current.duration
-      if (dur && !isNaN(dur) && dur > 0) {
+      if (!isNaN(dur) && dur > 0) {
         setDuration(dur)
-        if (trimEndSec === 0 || trimEndSec > dur || trimEndSec === 60) {
-          const parsedEnd = initialTrimEnd ? parseTimeToSeconds(initialTrimEnd) : dur
-          setTrimEndSec(Math.min(parsedEnd, dur))
+        if (!initialTrimEnd) {
+          setTrimEndSec(dur)
         }
       }
     }
@@ -96,13 +87,13 @@ export const VideoTrimmerModal: React.FC<VideoTrimmerModalProps> = ({
 
   const handleTimeUpdate = () => {
     if (videoRef.current) {
-      const cur = videoRef.current.currentTime
-      setCurrentTime(cur)
+      const current = videoRef.current.currentTime
+      setCurrentTime(current)
 
-      if (cur >= trimEndSec || cur < trimStartSec) {
-        if (isPlaying) {
-          videoRef.current.currentTime = trimStartSec
-          videoRef.current.play()
+      if (current >= trimEndSec) {
+        videoRef.current.currentTime = trimStartSec
+        if (!isPlaying) {
+          videoRef.current.pause()
         }
       }
     }
@@ -114,45 +105,42 @@ export const VideoTrimmerModal: React.FC<VideoTrimmerModalProps> = ({
       videoRef.current.pause()
       setIsPlaying(false)
     } else {
-      const cur = videoRef.current.currentTime
-      if (cur < trimStartSec || cur >= trimEndSec) {
+      if (videoRef.current.currentTime < trimStartSec || videoRef.current.currentTime >= trimEndSec) {
         videoRef.current.currentTime = trimStartSec
       }
-      videoRef.current.play()
+      videoRef.current.play().catch(() => {})
       setIsPlaying(true)
     }
   }
 
-  const handleSeek = (timeSec: number) => {
+  const handleStartSliderChange = (newStart: number) => {
+    const safeStart = Math.max(0, Math.min(newStart, trimEndSec - 0.5))
+    setTrimStartSec(safeStart)
     if (videoRef.current) {
-      videoRef.current.currentTime = timeSec
-      setCurrentTime(timeSec)
+      videoRef.current.currentTime = safeStart
     }
   }
 
-  const handleStartSliderChange = (newStart: number) => {
-    const maxVal = duration > 0 ? duration : 3600
-    const validStart = Math.min(newStart, Math.max(0, trimEndSec - 0.2))
-    setTrimStartSec(Math.max(0, validStart))
-    handleSeek(validStart)
-  }
-
   const handleEndSliderChange = (newEnd: number) => {
-    const maxVal = duration > 0 ? duration : 3600
-    const validEnd = Math.max(newEnd, trimStartSec + 0.2)
-    setTrimEndSec(Math.min(maxVal, validEnd))
-    handleSeek(validEnd)
+    const maxDur = duration > 0 ? duration : 3600
+    const safeEnd = Math.min(maxDur, Math.max(newEnd, trimStartSec + 0.5))
+    setTrimEndSec(safeEnd)
+    if (videoRef.current) {
+      videoRef.current.currentTime = safeEnd
+    }
   }
 
   const handleReset = () => {
     setTrimStartSec(0)
-    setTrimEndSec(duration || 60)
-    handleSeek(0)
+    setTrimEndSec(duration > 0 ? duration : 60)
+    if (videoRef.current) {
+      videoRef.current.currentTime = 0
+    }
   }
 
   const handleSave = () => {
-    const isFull = trimStartSec === 0 && (trimEndSec >= duration || trimEndSec === 0)
-    if (isFull && duration > 0) {
+    const isFullVideo = trimStartSec === 0 && (duration === 0 || trimEndSec >= duration - 0.1)
+    if (isFullVideo) {
       onSave(undefined, undefined)
     } else {
       onSave(formatFfmpegTime(trimStartSec), formatFfmpegTime(trimEndSec))
@@ -160,25 +148,25 @@ export const VideoTrimmerModal: React.FC<VideoTrimmerModalProps> = ({
     onClose()
   }
 
-  const maxDuration = Math.max(1, duration || 60)
+  const maxDuration = duration > 0 ? duration : Math.max(60, trimEndSec)
   const selectedDuration = Math.max(0, trimEndSec - trimStartSec)
 
-  const fileUrl = `file:///${filePath.replace(/\\/g, '/')}`
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-150">
-      <div className="bg-surface border border-border rounded-3xl w-full max-w-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
-
-        <div className="p-4 px-6 border-b border-border flex items-center justify-between bg-surface/90">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="h-8 w-8 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-500">
-              <ScissorSvg className="h-4 w-4" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+      <div
+        className="relative w-full max-w-4xl bg-surface border border-border rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-surface">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/30">
+              <ScissorSvg className="h-5 w-5" />
             </div>
-            <div className="min-w-0">
-              <h3 className="text-sm font-bold text-gray-900 dark:text-white truncate" title={fileName}>
-                Cortador Visual de Vídeo
+            <div>
+              <h3 className="text-sm font-bold text-gray-900 dark:text-white">
+                {t('trimmer.title')}
               </h3>
-              <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">
+              <p className="text-xs text-gray-500 dark:text-gray-400 font-mono truncate max-w-md">
                 {fileName}
               </p>
             </div>
@@ -186,17 +174,17 @@ export const VideoTrimmerModal: React.FC<VideoTrimmerModalProps> = ({
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-surface-hover transition-colors"
+            className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-surface-hover transition-colors"
           >
-            <CloseSvg className="h-4 w-4" />
+            <CloseSvg className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="relative bg-black flex items-center justify-center min-h-[260px] max-h-[380px] overflow-hidden group">
+        <div className="relative bg-black flex items-center justify-center min-h-[280px] max-h-[380px] overflow-hidden group">
           {!videoLoadError ? (
             <video
               ref={videoRef}
-              src={fileUrl}
+              src={`media://${filePath}`}
               onLoadedMetadata={handleLoadedMetadata}
               onTimeUpdate={handleTimeUpdate}
               onPlay={() => setIsPlaying(true)}
@@ -234,11 +222,10 @@ export const VideoTrimmerModal: React.FC<VideoTrimmerModalProps> = ({
         </div>
 
         <div className="p-5 px-6 space-y-4 bg-surface border-t border-border">
-
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-gray-700 dark:text-gray-300">Trecho Selecionado:</span>
+                <span className="font-semibold text-gray-700 dark:text-gray-300">{t('trimmer.selectedCut')}:</span>
                 <span className="px-2.5 py-0.5 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-mono font-bold text-xs">
                   {formatTime(trimStartSec)} ➔ {formatTime(trimEndSec)} ({selectedDuration.toFixed(1)}s)
                 </span>
@@ -246,15 +233,14 @@ export const VideoTrimmerModal: React.FC<VideoTrimmerModalProps> = ({
               <button
                 onClick={handleReset}
                 className="text-[11px] text-gray-500 dark:text-gray-400 hover:text-emerald-500 flex items-center gap-1 font-medium transition-colors"
-                title="Resetar para o vídeo completo"
+                title={t('trimmer.resetCut')}
               >
                 <UndoSvg className="h-3.5 w-3.5" />
-                Resetar
+                {t('common.keep')}
               </button>
             </div>
 
             <div className="relative w-full h-8 bg-background rounded-xl border border-border overflow-hidden flex items-center select-none shadow-inner">
-
               <div
                 className="absolute top-0 bottom-0 left-0 bg-black/40 dark:bg-black/60 transition-all"
                 style={{ width: `${(trimStartSec / maxDuration) * 100}%` }}
@@ -282,7 +268,7 @@ export const VideoTrimmerModal: React.FC<VideoTrimmerModalProps> = ({
             <div className="grid grid-cols-2 gap-4 pt-1">
               <div className="space-y-1">
                 <div className="flex justify-between text-[11px] text-gray-500 dark:text-gray-400 font-mono">
-                  <span>Ponto Inicial</span>
+                  <span>{t('trimmer.start')}</span>
                   <span className="text-emerald-600 dark:text-emerald-400 font-bold">{formatTime(trimStartSec)}</span>
                 </div>
                 <input
@@ -298,7 +284,7 @@ export const VideoTrimmerModal: React.FC<VideoTrimmerModalProps> = ({
 
               <div className="space-y-1">
                 <div className="flex justify-between text-[11px] text-gray-500 dark:text-gray-400 font-mono">
-                  <span>Ponto Final</span>
+                  <span>{t('trimmer.end')}</span>
                   <span className="text-emerald-600 dark:text-emerald-400 font-bold">{formatTime(trimEndSec)}</span>
                 </div>
                 <input
@@ -319,10 +305,9 @@ export const VideoTrimmerModal: React.FC<VideoTrimmerModalProps> = ({
               type="button"
               onClick={togglePlayTrimmed}
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-xs font-bold text-emerald-600 dark:text-emerald-400 transition-all"
-              title="Assista apenas ao trecho selecionado em loop"
             >
               {isPlaying ? <Pause className="h-4 w-4 text-emerald-500" /> : <Play className="h-4 w-4 fill-emerald-500 text-emerald-500" />}
-              <span>{isPlaying ? 'Pausar Trecho' : 'Assistir Trecho Cortado'}</span>
+              <span>{isPlaying ? t('trimmer.pause') : t('trimmer.play')}</span>
             </button>
 
             <div className="flex items-center gap-2">
@@ -331,7 +316,7 @@ export const VideoTrimmerModal: React.FC<VideoTrimmerModalProps> = ({
                 onClick={onClose}
                 className="px-4 py-2 rounded-xl text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors font-medium"
               >
-                Cancelar
+                {t('common.cancel')}
               </button>
 
               <button
@@ -340,7 +325,7 @@ export const VideoTrimmerModal: React.FC<VideoTrimmerModalProps> = ({
                 className="flex items-center gap-1.5 px-6 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white font-bold text-xs transition-all transform active:scale-95"
               >
                 <Check className="h-4 w-4 text-white stroke-[2.5]" />
-                <span>Aplicar Corte</span>
+                <span>{t('trimmer.saveCut')}</span>
               </button>
             </div>
           </div>

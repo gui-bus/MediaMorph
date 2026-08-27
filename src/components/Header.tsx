@@ -2,10 +2,12 @@ import React from 'react'
 import {
   History,
   Bookmark,
+  Languages,
 } from 'lucide-react'
 import { MediaTab, ThemeMode } from '../types'
 import { Logo } from './Logo'
 import { ImageSvg, VideoCameraSvg, AudioFileSvg, FileDocSvg } from './CustomIcons'
+import { useLanguage } from '../i18n/LanguageContext'
 
 interface HeaderProps {
   activeTab: MediaTab
@@ -29,6 +31,7 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleTheme,
 }) => {
   const isDark = theme === 'dark'
+  const { language, setLanguage, t } = useLanguage()
   const [appVersion, setAppVersion] = React.useState('v1.0.0')
 
   React.useEffect(() => {
@@ -38,6 +41,10 @@ export const Header: React.FC<HeaderProps> = ({
       })
     }
   }, [])
+
+  const toggleLanguage = () => {
+    setLanguage(language === 'pt' ? 'en' : 'pt')
+  }
 
   const getTabClass = (tab: MediaTab) => {
     const isActive = activeTab === tab
@@ -65,7 +72,7 @@ export const Header: React.FC<HeaderProps> = ({
           className={getTabClass('images')}
         >
           <ImageSvg className="h-4 w-4" />
-          <span>Imagens</span>
+          <span>{t('header.images')}</span>
         </button>
 
         <button
@@ -73,7 +80,7 @@ export const Header: React.FC<HeaderProps> = ({
           className={getTabClass('videos')}
         >
           <VideoCameraSvg className="h-4 w-4" />
-          <span>Vídeos</span>
+          <span>{t('header.videos')}</span>
         </button>
 
         <button
@@ -81,7 +88,7 @@ export const Header: React.FC<HeaderProps> = ({
           className={getTabClass('audio')}
         >
           <AudioFileSvg className="h-4 w-4" />
-          <span>Áudios</span>
+          <span>{t('header.audio')}</span>
         </button>
 
         <button
@@ -89,27 +96,37 @@ export const Header: React.FC<HeaderProps> = ({
           className={getTabClass('pdf')}
         >
           <FileDocSvg className="h-4 w-4" />
-          <span>PDFs</span>
+          <span>{t('header.pdf')}</span>
         </button>
       </div>
 
       <div className="flex items-center gap-2">
         <button
+          type="button"
+          onClick={toggleLanguage}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-surface border border-border text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:border-emerald-500/50 text-xs font-semibold transition-all shadow-sm"
+          title={language === 'pt' ? 'Mudar para Inglês (Switch to English)' : 'Switch to Portuguese (Mudar para Português)'}
+        >
+          <span className="text-sm leading-none">{language === 'pt' ? '🇧🇷' : '🇺🇸'}</span>
+          <span className="font-mono text-[11px] uppercase tracking-wider">{language === 'pt' ? 'PT' : 'EN'}</span>
+        </button>
+
+        <button
           onClick={onOpenPresets}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface border border-border text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 text-xs font-medium transition-all shadow-sm"
-          title="Salvar e carregar predefinições personalizadas"
+          title="Presets"
         >
           <Bookmark className="h-3.5 w-3.5 text-emerald-500 dark:text-emerald-400" />
-          <span className="hidden sm:inline">Presets</span>
+          <span className="hidden sm:inline">{t('header.presets')}</span>
         </button>
 
         <button
           onClick={onOpenHistory}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface border border-border text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 text-xs font-medium transition-all shadow-sm relative"
-          title="Abrir histórico de conversões"
+          title={t('header.history')}
         >
           <History className="h-3.5 w-3.5 text-emerald-500 dark:text-emerald-400" />
-          <span className="hidden sm:inline">Histórico</span>
+          <span className="hidden sm:inline">{t('header.history')}</span>
           {historyCount > 0 && (
             <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-mono font-bold">
               {historyCount}
@@ -120,9 +137,9 @@ export const Header: React.FC<HeaderProps> = ({
         <button
           onClick={onToggleTheme}
           className="px-3 py-1.5 rounded-xl bg-surface border border-border text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 text-xs font-medium transition-all shadow-sm"
-          title="Alternar tema claro/escuro"
+          title={isDark ? t('header.themeLight') : t('header.themeDark')}
         >
-          {isDark ? 'Tema Claro' : 'Tema Escuro'}
+          {isDark ? t('header.themeLight') : t('header.themeDark')}
         </button>
       </div>
     </header>

@@ -1,13 +1,13 @@
 import React, { useState } from 'react'
 import { MediaTab } from '../types'
 import {
-  UploadSvg,
   OpenFolderSvg,
   ImageSvg,
   VideoCameraSvg,
   AudioFileSvg,
   FileDocSvg,
 } from './CustomIcons'
+import { useLanguage } from '../i18n/LanguageContext'
 
 interface DropZoneProps {
   activeTab: MediaTab
@@ -17,6 +17,7 @@ interface DropZoneProps {
 
 export const DropZone: React.FC<DropZoneProps> = ({ activeTab, onFilesSelected, disabled }) => {
   const [isDragOver, setIsDragOver] = useState(false)
+  const { t } = useLanguage()
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
@@ -99,7 +100,6 @@ export const DropZone: React.FC<DropZoneProps> = ({ activeTab, onFilesSelected, 
           : 'border-border bg-surface/60 hover:bg-surface hover:border-emerald-500/50 hover:shadow-md'
       }`}
     >
-
       <div
         className={`h-16 w-16 rounded-2xl flex items-center justify-center mb-3.5 transition-all duration-300 transform group-hover:scale-110 shadow-md ${
           isDragOver
@@ -119,12 +119,16 @@ export const DropZone: React.FC<DropZoneProps> = ({ activeTab, onFilesSelected, 
       </div>
 
       <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-1.5 flex items-center gap-2">
-        <span>Arraste arquivos ou pastas inteiras aqui</span>
+        <span>{t('dropzone.dropHere')}</span>
       </h3>
       <p className="text-xs text-gray-500 dark:text-gray-400 max-w-md mb-4">
-        {activeTab === 'pdf'
-          ? 'Junte fotos em um arquivo PDF único ou solte arquivos PDF para extrair cada página em imagem'
-          : 'Clique para selecionar arquivos locais ou arraste diretórios completos'}
+        {activeTab === 'images'
+          ? t('dropzone.imagesDesc')
+          : activeTab === 'videos'
+          ? t('dropzone.videosDesc')
+          : activeTab === 'audio'
+          ? t('dropzone.audioDesc')
+          : t('dropzone.pdfDesc')}
       </p>
 
       <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
@@ -134,7 +138,7 @@ export const DropZone: React.FC<DropZoneProps> = ({ activeTab, onFilesSelected, 
           className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-background hover:bg-surface-hover border border-border text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white text-xs font-semibold transition-all shadow-sm"
         >
           <OpenFolderSvg className="h-4 w-4" />
-          <span>Importar Pasta Inteira</span>
+          <span>{t('dropzone.browseFolder')}</span>
         </button>
       </div>
 

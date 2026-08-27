@@ -1,7 +1,8 @@
 import React from 'react'
 import { PdfGlobalSettings, PdfExtractFormat, PdfMode } from '../types'
-import { Sliders, FileText, FileStack, Image as ImageIcon, Combine, Scissors, Minimize2 } from 'lucide-react'
+import { Sliders, FileStack, Image as ImageIcon, Combine, Minimize2 } from 'lucide-react'
 import { SearchableSelect, SelectOption } from './SearchableSelect'
+import { useLanguage } from '../i18n/LanguageContext'
 
 interface PdfSettingsProps {
   settings: PdfGlobalSettings
@@ -10,96 +11,98 @@ interface PdfSettingsProps {
 }
 
 export const PdfSettings: React.FC<PdfSettingsProps> = ({ settings, onChange, disabled }) => {
+  const { t } = useLanguage()
+
   const pageSizeOptions: SelectOption[] = [
     {
       value: 'fit_image',
-      label: 'Ajustar ao Tamanho da Imagem',
-      desc: 'Preserva a resolução exata e proporção original da foto',
+      label: 'Fit Image Dimensions (Pixel-Perfect)',
+      desc: 'Preserves exact photo resolution and aspect ratio',
       badge: 'Pixel Perfect',
     },
     {
       value: 'a4',
-      label: 'Formato A4 Padrão (Documento)',
-      desc: 'Organiza as imagens centralizadas com margens em páginas A4',
-      badge: 'A4 Oficial',
+      label: 'Standard A4 Document (Margins)',
+      desc: 'Centers images inside standard A4 portrait pages',
+      badge: 'A4',
     },
   ]
 
   const extractFormatOptions: SelectOption[] = [
     {
-      value: 'png',
-      label: 'PNG (.png)',
-      desc: 'Sem perdas, máxima nitidez para textos, vetores e diagramas',
-      badge: 'Lossless',
-    },
-    {
       value: 'webp',
       label: 'WebP (.webp)',
-      desc: 'Formato moderno do Google, até 40% menor com excelente qualidade',
-      badge: 'Recomendado',
+      desc: 'Modern lightweight format (up to 40% smaller)',
+      badge: t('common.recommended'),
+    },
+    {
+      value: 'png',
+      label: 'PNG (.png)',
+      desc: 'Lossless sharp text and vectors',
+      badge: 'Lossless',
     },
     {
       value: 'jpeg',
       label: 'JPEG / JPG (.jpg)',
-      desc: 'Padrão universal compatível com todos os dispositivos e sistemas',
-      badge: 'Universal',
+      desc: 'Universal compatibility across all devices',
+      badge: t('common.universal'),
     },
     {
       value: 'avif',
       label: 'AVIF (.avif)',
-      desc: 'Taxa extrema de compressão de última geração',
+      desc: 'Next-gen extreme compression',
       badge: 'Next-Gen',
     },
     {
       value: 'tiff',
       label: 'TIFF (.tiff)',
-      desc: 'Formato não-comprimido ideal para arquivamento e impressão',
-      badge: 'Raw/Print',
+      desc: 'Uncompressed raw format for print',
+      badge: 'Print',
     },
   ]
 
   const extractScaleOptions: SelectOption[] = [
     {
       value: '1',
-      label: '1.0x (Padrão ~150 DPI)',
-      desc: 'Renderização rápida e tamanho de arquivo reduzido',
+      label: '1.0x (~150 DPI)',
+      desc: 'Fast rendering and compact size',
     },
     {
       value: '2',
-      label: '2.0x (Alta Definição ~300 DPI)',
-      desc: 'Texto ultra nítido ideal para leitura, OCR e impressão',
-      badge: 'Recomendado',
+      label: '2.0x (~300 DPI - High Definition)',
+      desc: 'Ultra sharp text for OCR & reading',
+      badge: t('common.recommended'),
     },
     {
       value: '3',
-      label: '3.0x (Ultra Definição ~450 DPI)',
-      desc: 'Máxima resolução para documentos com gráficos e tabelas detalhadas',
+      label: '3.0x (~450 DPI - Ultra Definition)',
+      desc: 'Maximum sharpness for complex charts',
     },
   ]
 
   const compressPresetOptions: SelectOption[] = [
     {
       value: '65',
-      label: 'Recomendado (65% - Equilibrado)',
-      desc: 'Redução de 70% a 90% do tamanho com leitura e texto 100% nítidos',
-      badge: 'Recomendado',
+      label: t('pdfSettings.compressPresets.balanced'),
+      desc: t('pdfSettings.compressPresets.balancedDesc'),
+      badge: t('common.recommended'),
     },
     {
       value: '75',
-      label: 'Alta Nitidez (75% - Gráficos)',
-      desc: 'Preserva detalhes finos para impressão e leitura de gráficos',
-      badge: 'Alta Fidelidade',
+      label: t('pdfSettings.compressPresets.high'),
+      desc: t('pdfSettings.compressPresets.highDesc'),
+      badge: 'High Quality',
     },
     {
       value: '45',
-      label: 'Extrema (45% - WhatsApp / Email)',
-      desc: 'Máxima redução para anexos com limite rígido (< 2 MB)',
-      badge: 'Super Leve',
+      label: t('pdfSettings.compressPresets.extreme'),
+      desc: t('pdfSettings.compressPresets.extremeDesc'),
+      badge: 'Super Light',
     },
     {
       value: 'custom',
-      label: 'Personalizado',
-      desc: 'Defina a taxa exata no controle deslizante',
+      label: t('pdfSettings.compressPresets.custom'),
+      desc: t('pdfSettings.compressPresets.customDesc'),
     },
   ]
 
@@ -118,11 +121,11 @@ export const PdfSettings: React.FC<PdfSettingsProps> = ({ settings, onChange, di
         <div className="flex items-center gap-2">
           <Sliders className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
           <h2 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
-            Operações com Documentos PDF
+            {t('pdfSettings.title')}
           </h2>
         </div>
 
-        <div className="flex flex-wrap items-center gap-1.5 bg-background p-1 rounded-xl border border-border">
+        <div className="flex flex-wrap items-center gap-1.5 p-1 bg-background/90 rounded-xl border border-border">
           <button
             type="button"
             disabled={disabled}
@@ -134,7 +137,7 @@ export const PdfSettings: React.FC<PdfSettingsProps> = ({ settings, onChange, di
             }`}
           >
             <Minimize2 className="h-3.5 w-3.5" />
-            Comprimir PDF
+            {t('pdfSettings.compressTab')}
           </button>
 
           <button
@@ -148,7 +151,7 @@ export const PdfSettings: React.FC<PdfSettingsProps> = ({ settings, onChange, di
             }`}
           >
             <FileStack className="h-3.5 w-3.5" />
-            Imagens ➔ PDF Único
+            {t('pdfSettings.imgToPdfTab')}
           </button>
 
           <button
@@ -162,7 +165,7 @@ export const PdfSettings: React.FC<PdfSettingsProps> = ({ settings, onChange, di
             }`}
           >
             <ImageIcon className="h-3.5 w-3.5" />
-            PDF ➔ Extrair Imagens
+            {t('pdfSettings.pdfToImgTab')}
           </button>
 
           <button
@@ -176,7 +179,7 @@ export const PdfSettings: React.FC<PdfSettingsProps> = ({ settings, onChange, di
             }`}
           >
             <Combine className="h-3.5 w-3.5" />
-            Mesclar / Dividir PDFs
+            {t('pdfSettings.mergeSplitTab')}
           </button>
         </div>
       </div>
@@ -185,7 +188,7 @@ export const PdfSettings: React.FC<PdfSettingsProps> = ({ settings, onChange, di
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           <div className="space-y-2">
             <SearchableSelect
-              label="Preset de Compressão"
+              label={t('pdfSettings.compressPresetLabel')}
               options={compressPresetOptions}
               value={currentCompressPreset}
               onChange={(val) => {
@@ -200,10 +203,10 @@ export const PdfSettings: React.FC<PdfSettingsProps> = ({ settings, onChange, di
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                Nível de Compressão ({settings.compressQuality || 70}%)
+                {t('pdfSettings.compressLevelLabel')} ({settings.compressQuality || 65}%)
               </label>
               <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono font-medium">
-                {settings.compressQuality || 70}/100
+                {settings.compressQuality || 65}/100
               </span>
             </div>
 
@@ -213,32 +216,23 @@ export const PdfSettings: React.FC<PdfSettingsProps> = ({ settings, onChange, di
               max="95"
               step="5"
               disabled={disabled}
-              value={settings.compressQuality || 70}
+              value={settings.compressQuality || 65}
               onChange={(e) => onChange({ ...settings, compressQuality: Number(e.target.value) })}
               className="w-full h-1.5 bg-background rounded-lg appearance-none cursor-pointer accent-emerald-500 disabled:opacity-40"
             />
-
-            <p className="text-[11px] text-gray-500 dark:text-gray-400">
-              {settings.compressQuality >= 80
-                ? 'Alta fidelidade: reduz o peso mantendo nitidez nítida de texto e imagens.'
-                : settings.compressQuality >= 60
-                ? 'Equilíbrio ideal: comprime substancialmente (50% a 80% menor) sem perda perceptível de leitura.'
-                : 'Compressão agressiva: ideal para anexos pesados de e-mail e mensageiros.'}
-            </p>
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
-              <FileText className="h-3.5 w-3.5 text-gray-500 dark:text-gray-400" />
-              Sufixo / Nome Personalizado (Opcional)
+            <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+              {t('pdfSettings.customPdfName')}
             </label>
             <input
               type="text"
-              placeholder="Ex: documento_reduzido.pdf"
-              disabled={disabled}
+              placeholder="Ex: documento_comprimido.pdf"
               value={settings.customPdfName || ''}
+              disabled={disabled}
               onChange={(e) => onChange({ ...settings, customPdfName: e.target.value })}
-              className="w-full bg-background border border-border rounded-xl px-3.5 py-2.5 text-xs text-gray-900 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:border-emerald-500"
+              className="w-full bg-background border border-border rounded-xl px-3 py-2 text-xs text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors"
             />
           </div>
         </div>
@@ -248,10 +242,10 @@ export const PdfSettings: React.FC<PdfSettingsProps> = ({ settings, onChange, di
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           <div className="space-y-2">
             <SearchableSelect
-              label="Layout / Tamanho da Página"
+              label={t('pdfSettings.pageSizeLabel')}
               options={pageSizeOptions}
               value={settings.pageSize}
-              onChange={(val) => onChange({ ...settings, pageSize: val as 'fit_image' | 'a4' })}
+              onChange={(val) => onChange({ ...settings, pageSize: val as any })}
               disabled={disabled}
             />
           </div>
@@ -259,7 +253,7 @@ export const PdfSettings: React.FC<PdfSettingsProps> = ({ settings, onChange, di
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                Qualidade das Imagens no PDF ({settings.quality}%)
+                {t('pdfSettings.imgQualityLabel')} ({settings.quality}%)
               </label>
               <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono font-medium">
                 {settings.quality}/100
@@ -270,32 +264,25 @@ export const PdfSettings: React.FC<PdfSettingsProps> = ({ settings, onChange, di
               type="range"
               min="20"
               max="100"
-              step="1"
+              step="5"
               disabled={disabled}
               value={settings.quality}
               onChange={(e) => onChange({ ...settings, quality: Number(e.target.value) })}
               className="w-full h-1.5 bg-background rounded-lg appearance-none cursor-pointer accent-emerald-500 disabled:opacity-40"
             />
-
-            <p className="text-[11px] text-gray-500 dark:text-gray-400">
-              {settings.quality >= 85
-                ? 'Alta definição (Ideal para impressão e leitura nítida)'
-                : 'Otimizado para envio por email e WhatsApp'}
-            </p>
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
-              <FileText className="h-3.5 w-3.5 text-gray-500 dark:text-gray-400" />
-              Nome do Arquivo PDF (Opcional)
+            <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+              {t('pdfSettings.customPdfName')}
             </label>
             <input
               type="text"
               placeholder="Ex: documento_final.pdf"
-              disabled={disabled}
               value={settings.customPdfName || ''}
+              disabled={disabled}
               onChange={(e) => onChange({ ...settings, customPdfName: e.target.value })}
-              className="w-full bg-background border border-border rounded-xl px-3.5 py-2.5 text-xs text-gray-900 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:border-emerald-500"
+              className="w-full bg-background border border-border rounded-xl px-3 py-2 text-xs text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors"
             />
           </div>
         </div>
@@ -305,9 +292,9 @@ export const PdfSettings: React.FC<PdfSettingsProps> = ({ settings, onChange, di
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           <div className="space-y-2">
             <SearchableSelect
-              label="Formato das Imagens Extraídas"
+              label={t('pdfSettings.extractFormatLabel')}
               options={extractFormatOptions}
-              value={settings.extractFormat}
+              value={settings.extractFormat || 'png'}
               onChange={(val) => onChange({ ...settings, extractFormat: val as PdfExtractFormat })}
               disabled={disabled}
             />
@@ -315,10 +302,10 @@ export const PdfSettings: React.FC<PdfSettingsProps> = ({ settings, onChange, di
 
           <div className="space-y-2">
             <SearchableSelect
-              label="Resolução / Nitidez (DPI)"
+              label={t('pdfSettings.extractDpiLabel')}
               options={extractScaleOptions}
               value={String(settings.extractScale || 2)}
-              onChange={(val) => onChange({ ...settings, extractScale: Number(val) })}
+              onChange={(val) => onChange({ ...settings, extractScale: Number(val) as any })}
               disabled={disabled}
             />
           </div>
@@ -326,7 +313,7 @@ export const PdfSettings: React.FC<PdfSettingsProps> = ({ settings, onChange, di
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                Qualidade de Compressão ({settings.extractQuality || 85}%)
+                {t('imageSettings.qualityLabel')} ({settings.extractQuality || 85}%)
               </label>
               <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono font-medium">
                 {settings.extractQuality || 85}/100
@@ -337,72 +324,61 @@ export const PdfSettings: React.FC<PdfSettingsProps> = ({ settings, onChange, di
               type="range"
               min="20"
               max="100"
-              step="1"
-              disabled={disabled}
+              step="5"
+              disabled={disabled || settings.extractFormat === 'png' || settings.extractFormat === 'tiff'}
               value={settings.extractQuality || 85}
               onChange={(e) => onChange({ ...settings, extractQuality: Number(e.target.value) })}
               className="w-full h-1.5 bg-background rounded-lg appearance-none cursor-pointer accent-emerald-500 disabled:opacity-40"
             />
-
-            <p className="text-[11px] text-gray-500 dark:text-gray-400">
-              Cada página do PDF será exportada individualmente como uma imagem{' '}
-              <strong className="text-emerald-500 dark:text-emerald-400 font-mono uppercase">
-                .{settings.extractFormat}
-              </strong>
-            </p>
           </div>
         </div>
       )}
 
       {settings.mode === 'merge_split_pdf' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div className="p-4 rounded-xl bg-background/80 border border-border/80 space-y-3">
-            <div className="flex items-center gap-2">
-              <Combine className="h-4 w-4 text-emerald-500" />
-              <h3 className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider">
-                Mesclar PDFs em Lote
-              </h3>
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="p-4 rounded-xl bg-background/80 border border-border space-y-3">
+              <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-semibold text-xs uppercase tracking-wider">
+                <Combine className="h-4 w-4" />
+                <span>{t('pdfSettings.mergeTitle')}</span>
+              </div>
+              <p className="text-xs text-gray-600 dark:text-gray-400">
+                {t('pdfSettings.mergeDesc')}
+              </p>
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-medium text-gray-700 dark:text-gray-300">
+                  {t('pdfSettings.mergeNameLabel')}
+                </label>
+                <input
+                  type="text"
+                  placeholder="documento_unificado.pdf"
+                  value={settings.customPdfName || ''}
+                  onChange={(e) => onChange({ ...settings, customPdfName: e.target.value })}
+                  className="w-full bg-surface border border-border rounded-lg px-2.5 py-1.5 text-xs text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                />
+              </div>
             </div>
-            <p className="text-xs text-gray-600 dark:text-gray-300">
-              Adicione 2 ou mais arquivos PDF na fila para unificá-los em um único documento contínuo na ordem da lista.
-            </p>
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-medium text-gray-700 dark:text-gray-300">
-                Nome do PDF Mesclado (Opcional)
-              </label>
-              <input
-                type="text"
-                placeholder="Ex: pdf_unificado.pdf"
-                disabled={disabled}
-                value={settings.customPdfName || ''}
-                onChange={(e) => onChange({ ...settings, customPdfName: e.target.value })}
-                className="w-full bg-surface border border-border rounded-lg px-2.5 py-1.5 text-xs text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
-              />
-            </div>
-          </div>
 
-          <div className="p-4 rounded-xl bg-background/80 border border-border/80 space-y-3">
-            <div className="flex items-center gap-2">
-              <Scissors className="h-4 w-4 text-emerald-500" />
-              <h3 className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider">
-                Dividir / Extrair Intervalo de Páginas
-              </h3>
-            </div>
-            <p className="text-xs text-gray-600 dark:text-gray-300">
-              Especifique quais páginas deseja extrair do PDF (deixe em branco se desejar mesclar múltiplos arquivos).
-            </p>
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-medium text-gray-700 dark:text-gray-300">
-                Intervalo de Páginas (Ex: 1-5, 8, 11-14)
-              </label>
-              <input
-                type="text"
-                placeholder="Ex: 1-3, 5, 8-10"
-                disabled={disabled}
-                value={settings.splitRange || ''}
-                onChange={(e) => onChange({ ...settings, splitRange: e.target.value })}
-                className="w-full bg-surface border border-border rounded-lg px-2.5 py-1.5 text-xs text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
-              />
+            <div className="p-4 rounded-xl bg-background/80 border border-border space-y-3">
+              <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-semibold text-xs uppercase tracking-wider">
+                <Combine className="h-4 w-4" />
+                <span>{t('pdfSettings.splitTitle')}</span>
+              </div>
+              <p className="text-xs text-gray-600 dark:text-gray-400">
+                {t('pdfSettings.splitDesc')}
+              </p>
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-medium text-gray-700 dark:text-gray-300">
+                  {t('pdfSettings.splitRangeLabel')}
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ex: 1-3, 5, 7-10"
+                  value={settings.splitRange || ''}
+                  onChange={(e) => onChange({ ...settings, splitRange: e.target.value })}
+                  className="w-full bg-surface border border-border rounded-lg px-2.5 py-1.5 text-xs text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                />
+              </div>
             </div>
           </div>
         </div>

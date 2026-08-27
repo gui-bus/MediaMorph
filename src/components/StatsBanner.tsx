@@ -2,12 +2,15 @@ import React from 'react'
 import { LifetimeStats } from '../types'
 import { formatBytes } from '../lib/utils'
 import { Award, HardDrive } from 'lucide-react'
+import { useLanguage } from '../i18n/LanguageContext'
 
 interface StatsBannerProps {
   stats: LifetimeStats
 }
 
 export const StatsBanner: React.FC<StatsBannerProps> = ({ stats }) => {
+  const { t } = useLanguage()
+
   if (stats.totalFiles === 0 && stats.totalBytesSaved === 0) {
     return null
   }
@@ -20,10 +23,10 @@ export const StatsBanner: React.FC<StatsBannerProps> = ({ stats }) => {
         </div>
         <div>
           <span className="font-bold text-gray-900 dark:text-white flex items-center gap-1.5">
-            Economia Total Acumulada
+            {t('stats.filesProcessed')}
           </span>
           <p className="text-gray-600 dark:text-gray-400 text-[11px]">
-            Você já processou <strong className="text-gray-800 dark:text-gray-200">{stats.totalFiles} arquivos</strong> com o MediaMorph.
+            {stats.totalFiles} {t('stats.filesProcessed').toLowerCase()} • {t('stats.offlineProcessing')}
           </p>
         </div>
       </div>
@@ -31,7 +34,7 @@ export const StatsBanner: React.FC<StatsBannerProps> = ({ stats }) => {
       <div className="flex items-center gap-2">
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-background border border-border">
           <HardDrive className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-          <span className="text-gray-600 dark:text-gray-400 text-[11px]">Espaço economizado:</span>
+          <span className="text-gray-600 dark:text-gray-400 text-[11px]">{t('stats.spaceSaved')}:</span>
           <span className="font-bold text-emerald-600 dark:text-emerald-400 font-mono text-xs">
             {formatBytes(stats.totalBytesSaved)}
           </span>
