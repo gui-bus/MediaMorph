@@ -1,6 +1,5 @@
 {
   "name": "mediamorph",
-  "type": "module",
   "version": "1.0.0",
   "description": "Desktop Image & Video Compressor and Converter for Windows",
   "main": "dist-electron/main.js",
@@ -13,7 +12,7 @@
     "build": "tsc && vite build && electron-builder",
     "build:frontend": "tsc && vite build",
     "build:exe": "tsc && vite build && electron-builder --win --dir && node scripts/set-icon.mjs",
-    "strip-comments": "node scripts/strip-comments.js",
+    "strip-comments": "node scripts/strip-comments.mjs",
     "preview": "vite preview"
   },
   "keywords": [

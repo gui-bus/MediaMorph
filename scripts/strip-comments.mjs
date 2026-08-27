@@ -12,10 +12,9 @@ const IGNORE_DIRS = new Set(['node_modules', 'dist', 'dist-electron', 'release',
 
 function stripCommentsFromCode(code, ext) {
   if (ext === '.css') {
-    return code.replace(/\/\*[\s\S]*?\*\//g, '')
+    return code.replace(/\/\*[\s\S]*?\*\
   }
 
-  // Pre-strip JSX comments like {/* comment */}
   if (ext === '.tsx' || ext === '.jsx') {
     code = code.replace(/\{\s*\/\*[\s\S]*?\*\/\s*\}/g, '')
   }
@@ -93,7 +92,6 @@ function stripCommentsFromCode(code, ext) {
       continue
     }
 
-    // Check for comment starts
     if (char === '/' && nextChar === '/') {
       inLineComment = true
       i += 2
@@ -106,7 +104,6 @@ function stripCommentsFromCode(code, ext) {
       continue
     }
 
-    // Check for string starts
     if (char === "'") {
       inSingleQuote = true
       isEscaped = false
@@ -135,7 +132,6 @@ function stripCommentsFromCode(code, ext) {
     i++
   }
 
-  // Remove trailing whitespace from each line and collapse excess blank lines
   const lines = result.split('\n').map((line) => line.trimEnd())
   const cleanedLines = []
   let prevEmpty = false

@@ -1,7 +1,8 @@
-import { app, BrowserWindow, ipcMain, dialog, shell, Notification, protocol, net } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog, shell, Notification, nativeImage } from 'electron'
 import path from 'node:path'
 import fs from 'node:fs/promises'
-import { fileURLToPath, pathToFileURL } from 'node:url'
+import fsSync from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import sharp from 'sharp'
 import ffmpegInstaller from '@ffmpeg-installer/ffmpeg'
 import ffmpeg from 'fluent-ffmpeg'
@@ -9,6 +10,10 @@ import { processImage, ImageProcessOptions } from './services/imageService'
 import { processVideo, VideoProcessOptions, VideoProgressEvent, getVideoMetadata } from './services/videoService'
 import { processAudio, AudioProcessOptions } from './services/audioService'
 import { convertImagesToPdf, ImagesToPdfOptions, savePdfPagesToImages, SavePdfPagesOptions } from './services/pdfService'
+
+if (process.platform === 'win32') {
+  app.setAppUserModelId('com.mediamorph.app')
+}
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -52,6 +57,47 @@ function isAudioFile(ext: string): boolean {
 
 function isPdfFile(ext: string): boolean {
   return PDF_EXTENSIONS.includes(ext.toLowerCase())
+}
+
+function getAppIcon(): Electron.NativeImage | string {
+  const root = process.env.APP_ROOT || path.join(__dirname, '..')
+  const possiblePaths = [
+    path.join(root, 'build', 'icon.ico'),
+    path.join(root, 'public', 'icon.ico'),
+    path.join(root, 'public', 'icon.png'),
+    path.join(root, 'dist', 'icon.ico'),
+    path.join(root, 'dist', 'icon.png'),
+    path.join(process.resourcesPath, 'app.asar', 'build', 'icon.ico'),
+    path.join(process.resourcesPath, 'app.asar', 'public', 'icon.png'),
+    path.join(app.getAppPath(), 'build', 'icon.ico'),
+    path.join(app.getAppPath(), 'public', 'icon.png'),
+    path.join(__dirname, '../build/icon.ico'),
+    path.join(__dirname, '../public/icon.png'),
+  ]
+
+  for (const p of possiblePaths) {
+    if (fsSync.existsSync(p)) {
+      try {
+        const img = nativeImage.createFromPath(p)
+        if (!img.isEmpty()) return img
+      } catch {}
+    }
+  }
+  return path.join(root, 'build', 'icon.ico')
+}
+
+function getPreloadPath(): string {
+  const candidates = [
+    path.join(__dirname, 'preload.js'),
+    path.join(__dirname, 'preload.mjs'),
+    path.join(__dirname, 'preload.cjs'),
+    path.join(process.env.APP_ROOT || '', 'dist-electron', 'preload.js'),
+    path.join(process.env.APP_ROOT || '', 'dist-electron', 'preload.mjs'),
+  ]
+  for (const c of candidates) {
+    if (fsSync.existsSync(c)) return c
+  }
+  return path.join(__dirname, 'preload.js')
 }
 
 async function scanDirectoryRecursive(dirPath: string): Promise<any[]> {
@@ -185,12 +231,12 @@ async function listDirectoryItems(dirPath: string): Promise<any[]> {
 }
 
 function createWindow() {
-  const root = process.env.APP_ROOT || path.join(__dirname, '..')
-  const iconPath = path.join(root, 'build', 'icon.ico')
+  const appIcon = getAppIcon()
+  const preloadScript = getPreloadPath()
 
   win = new BrowserWindow({
     title: 'MediaMorph',
-    icon: iconPath,
+    icon: appIcon,
     width: 1300,
     height: 860,
     minWidth: 900,
@@ -198,13 +244,17 @@ function createWindow() {
     autoHideMenuBar: true,
     backgroundColor: '#161616',
     webPreferences: {
-      preload: path.join(__dirname, 'preload.mjs'),
+      preload: preloadScript,
       nodeIntegration: false,
       contextIsolation: true,
       webSecurity: false,
       sandbox: false,
     },
   })
+
+  if (typeof appIcon !== 'string') {
+    win.setIcon(appIcon)
+  }
 
   win.webContents.on('did-finish-load', () => {
     win?.webContents.send('main-process-message', new Date().toLocaleString())
