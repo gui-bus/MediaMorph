@@ -519,7 +519,17 @@ app.whenReady().then(() => {
   ipcMain.handle('media:readFileBase64', async (_event, filePath: string) => {
     try {
       const buffer = await fs.readFile(filePath)
-      return buffer.toString('base64')
+      const ext = path.extname(filePath).toLowerCase().replace('.', '')
+      const mime = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg'
+        : ext === 'png' ? 'image/png'
+        : ext === 'webp' ? 'image/webp'
+        : ext === 'avif' ? 'image/avif'
+        : ext === 'gif' ? 'image/gif'
+        : ext === 'svg' ? 'image/svg+xml'
+        : ext === 'ico' ? 'image/x-icon'
+        : ext === 'pdf' ? 'application/pdf'
+        : 'application/octet-stream'
+      return `data:${mime};base64,${buffer.toString('base64')}`
     } catch {
       return null
     }

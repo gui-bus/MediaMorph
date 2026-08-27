@@ -15,7 +15,8 @@ if (typeof Number !== 'undefined' && !(Number.prototype as any).toHex) {
 }
 
 if (typeof window !== 'undefined') {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`
+  const version = pdfjsLib.version || '4.4.168'
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${version}/build/pdf.worker.min.mjs`
 }
 
 export interface ExtractedPage {
@@ -28,16 +29,18 @@ export async function extractPagesFromPdf(
   scale: number = 2.0,
   onProgress?: (current: number, total: number) => void
 ): Promise<ExtractedPage[]> {
-  const binaryString = atob(fileBase64)
+  const rawBase64 = fileBase64.includes(',') ? fileBase64.split(',')[1] : fileBase64
+  const binaryString = atob(rawBase64)
   const len = binaryString.length
   const bytes = new Uint8Array(len)
   for (let i = 0; i < len; i++) {
     bytes[i] = binaryString.charCodeAt(i)
   }
 
+  const version = pdfjsLib.version || '4.4.168'
   const loadingTask = pdfjsLib.getDocument({
     data: bytes,
-    cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
+    cMapUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${version}/cmaps/`,
     cMapPacked: true,
   })
 
@@ -56,9 +59,10 @@ export async function extractPagesFromPdf(
 
     if (ctx) {
       await page.render({
-        canvasContext: ctx,
+        canvasContext: ctx as any,
         viewport,
-      }).promise
+        canvas: canvas as any,
+      } as any).promise
 
       const dataUrl = canvas.toDataURL('image/png')
       pages.push({

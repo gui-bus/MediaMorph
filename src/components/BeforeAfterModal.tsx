@@ -34,8 +34,15 @@ export const BeforeAfterModal: React.FC<BeforeAfterModalProps> = ({
         const origBase64 = await (window as any).electronAPI.readFileBase64(originalPath)
         const optBase64 = await (window as any).electronAPI.readFileBase64(outputPath)
         if (isMounted) {
-          setOriginalSrc(origBase64)
-          setOptimizedSrc(optBase64)
+          const ensureDataUri = (data: string | null, filePath: string) => {
+            if (!data) return null
+            if (data.startsWith('data:')) return data
+            const ext = filePath.split('.').pop()?.toLowerCase() || 'jpeg'
+            const mime = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : ext === 'avif' ? 'image/avif' : ext === 'gif' ? 'image/gif' : 'image/jpeg'
+            return `data:${mime};base64,${data}`
+          }
+          setOriginalSrc(ensureDataUri(origBase64, originalPath))
+          setOptimizedSrc(ensureDataUri(optBase64, outputPath))
         }
       }
     }
