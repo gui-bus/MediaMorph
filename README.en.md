@@ -34,6 +34,7 @@ Below is the complete catalogue of all capabilities, features, and media operati
 
 ### 🖼️ 1. Images & Icons
 - **Multi-Format Conversion & Compression:** Convert between **PNG, JPG/JPEG, WebP, AVIF, GIF, TIFF, BMP, SVG, and ICO**.
+- **Smart Native Image Compressor (*TinyPNG / MozJPEG Style*):** Keep the original format (PNG stays PNG, JPG stays JPG) while slashing file size by up to 70-80% using level-9 palette quantization and MozJPEG.
 - **Batch Watermarking:**
   - Custom **Text** or transparent **PNG Logo** overlays.
   - Controls for opacity (10% to 100%), font size, color, and positioning (*Center, Corners*).
@@ -80,6 +81,7 @@ Below is the complete catalogue of all capabilities, features, and media operati
 ---
 
 ### 📄 4. PDF Documents
+- **Direct PDF Compression (Shrink MBs):** Compress heavy PDF files (e.g. 50 MB down to 5 MB) with smart presets (*Recommended 70%, High Quality 85%, Extreme 50%*), preserving original page dimensions and layout.
 - **Images ➔ Single PDF:** Merge and compile multiple photos/images into a single PDF document with custom page order and quality compression.
 - **PDF ➔ Page Extraction to Images:** Load any PDF document and extract each page as a standalone image in **WebP, PNG, JPEG, AVIF, or TIFF** (150 to 450 DPI).
 - **Merge Multiple PDFs:** Combine multiple PDF documents into a single continuous file.
@@ -98,84 +100,19 @@ Below is the complete catalogue of all capabilities, features, and media operati
 
 ---
 
-## 🛠️ Tech Stack
+## 🚀 How to Download & Use (Portable Executable)
 
-<div align="center">
-  <img alt="Electron" height="60" width="60" src="https://github.com/gui-bus/TechIcons/blob/main/Dark/Electron.svg">
-  <img alt="React" height="60" width="60" src="https://github.com/gui-bus/TechIcons/blob/main/Dark/React.svg">
-  <img alt="Typescript" height="60" width="60" src="https://github.com/gui-bus/TechIcons/blob/main/Dark/Typescript.svg">
-  <img alt="NodeJS" height="60" width="60" src="https://github.com/gui-bus/TechIcons/blob/main/Dark/NodeJS.svg">
-  <img alt="FFmpeg" height="60" width="60" src="https://github.com/gui-bus/TechIcons/blob/main/Dark/FFmpeg.svg">
-  <img alt="Sharp" height="60" width="60" src="https://github.com/gui-bus/TechIcons/blob/main/Dark/Sharp.svg">
-  <img alt="PDF-Lib" height="60" width="60" src="https://github.com/gui-bus/TechIcons/blob/main/Dark/PDF-Lib.svg">
-  <img alt="Vite" height="60" width="60" src="https://github.com/gui-bus/TechIcons/blob/main/Dark/Vite.svg">
-  <img alt="TailwindCSS" height="60" width="60" src="https://github.com/gui-bus/TechIcons/blob/main/Dark/TailwindCSS.svg">
-  <img alt="PostCSS" height="60" width="60" src="https://github.com/gui-bus/TechIcons/blob/main/Dark/PostCSS.svg">
-  <img alt="Lucide" height="60" width="60" src="https://github.com/gui-bus/TechIcons/blob/main/Dark/Lucide.svg">
-  <img alt="Windows" height="60" width="60" src="https://github.com/gui-bus/TechIcons/blob/main/Dark/Windows.svg">
-  <img alt="npm" height="60" width="60" src="https://github.com/gui-bus/TechIcons/blob/main/Dark/npm.svg">
-  <img alt="GIT" height="60" width="60" src="https://github.com/gui-bus/TechIcons/blob/main/Dark/GIT.svg">
-  <img alt="Conventional Commits" height="60" width="60" src="https://github.com/gui-bus/TechIcons/blob/main/Dark/Conventional%20Commits.svg">
-  <img alt="Github Actions" height="60" width="60" src="https://github.com/gui-bus/TechIcons/blob/main/Dark/Github%20Actions.svg">
-</div>
+**MediaMorph** is distributed as a **standalone portable app for Windows (64-bit)**. No installation or dependencies (like Node.js or FFmpeg) required!
 
----
+### 📥 Download Steps:
 
-## 🏛️ System Architecture
+1. Go to the official release page: **[GitHub Releases - MediaMorph](https://github.com/gui-bus/MediaMorph/releases)**
+2. Under the latest release (e.g. `v1.0.0`), download the portable executable:
+   👉 **`MediaMorph-Portable-1.0.0.exe`**
+3. Double-click the downloaded file and start converting, compressing, and editing your media immediately!
 
-```mermaid
-graph TB
-    subgraph Frontend ["🎨 Renderer Process (UI / React 18)"]
-        UI["🖥️ Main Dashboard & App UI"]
-        Explorer["📂 Integrated File Explorer with Thumbnails"]
-        Trimmer["✂️ Visual Video Trimmer with Loop"]
-        AudioPlayer["🎵 Inline Mini Audio Player"]
-        Dropzone["📥 Drag & Drop File & Folder Zone"]
-        Settings["⚙️ Global Settings, Watermark & Filters"]
-        Presets["⭐ User Presets Manager"]
-        Comparator["🖼️ Before vs After Split Slider"]
-    end
-
-    subgraph IPC ["⚡ Secure IPC Communication Bridge"]
-        Bridge["🔒 contextBridge / electronAPI"]
-    end
-
-    subgraph Backend ["⚙️ Main Process (Node.js & Electron Main)"]
-        Main["🧠 Electron Main Process"]
-        ImgService["🖼️ imageService (Sharp, Watermark & Filters)"]
-        VidService["🎬 videoService (FFmpeg, GPU NVENC & Audio Extractor)"]
-        AudService["🎵 audioService (FFmpeg Audio Core)"]
-        PdfService["📄 pdfService (PDF-Lib & PDF.js Engine)"]
-    end
-
-    subgraph Native ["💻 Operating System & Hardware"]
-        FS["📁 Local File System (Windows)"]
-        HW["⚡ GPU Hardware Acceleration (NVENC/QSV/AMF)"]
-    end
-
-    UI --> Bridge
-    Explorer --> Bridge
-    Trimmer --> Bridge
-    AudioPlayer --> Bridge
-    Dropzone --> Bridge
-    Settings --> Bridge
-    Presets --> Bridge
-    Comparator --> Bridge
-
-    Bridge --> Main
-    Main --> ImgService
-    Main --> VidService
-    Main --> AudService
-    Main --> PdfService
-
-    ImgService --> FS
-    VidService --> FS
-    AudService --> FS
-    PdfService --> FS
-
-    VidService -.->|GPU Acceleration| HW
-    Trimmer -.->|Local file:/// Stream| HW
-```
+> [!TIP]
+> Because it is 100% portable, you can copy the executable to a USB flash drive or any folder and run it without admin privileges or installers.
 
 ---
 
@@ -183,58 +120,36 @@ graph TB
 
 | Media Type | Input Formats | Output Formats | Capabilities |
 | :--- | :--- | :--- | :--- |
-| **Images** | PNG, JPG, JPEG, WebP, AVIF, TIFF, GIF, SVG, BMP, ICO | WebP, AVIF, JPEG, PNG, GIF, TIFF, ICO | Watermark (text/logo), color filters (brightness/contrast/saturation/sharpen), rotate/flip, SVG density, presets, EXIF removal, multi-layer `.ico`. |
+| **Images** | PNG, JPG, JPEG, WebP, AVIF, TIFF, GIF, SVG, BMP, ICO | WebP, AVIF, JPEG, PNG, GIF, TIFF, ICO | TinyPNG compressor mode, watermark (text/logo), color filters (brightness/contrast/saturation/sharpen), rotate/flip, SVG density, presets, EXIF removal, multi-layer `.ico`. |
 | **Videos** | MP4, MKV, MOV, AVI, WebM, FLV, WMV, M4V, 3GP | MP4, WebM, MKV, GIF, MP3, WAV, FLAC, AAC, OGG | GPU acceleration (NVENC/QSV/AMF), FPS (24/30/60), speed multiplier (0.5x-4x), crop (9:16, 1:1, 16:9), visual trimmer, target size limit. |
 | **Audio** | MP3, WAV, FLAC, AAC, OGG, M4A, WMA, AIFF | MP3, WAV, FLAC, AAC, OGG | Inline mini audio player, custom bitrate (128k - 320k), stereo/mono mixing, volume normalization. |
-| **PDF Documents** | PNG, JPG, JPEG, WebP, AVIF, TIFF, PDF | PDF (.pdf), WebP, PNG, JPEG, AVIF, TIFF | Multi-photo compiling, page extraction into high-res images (150 - 450 DPI), multi-PDF merging, page range splitting. |
+| **PDF Documents** | PNG, JPG, JPEG, WebP, AVIF, TIFF, PDF | PDF (.pdf), WebP, PNG, JPEG, AVIF, TIFF | PDF compression (50 MB ➔ 5 MB), multi-photo compiling, page extraction into high-res images (150 - 450 DPI), multi-PDF merging, page range splitting. |
 
 ---
 
-## 📦 Installation & Setup
+<details>
+<summary>💻 <strong>For Developers (Build from Source)</strong></summary>
 
-### Prerequisites
+<br />
 
-* [Node.js](https://nodejs.org/) v18.0.0 or higher
-* [NPM](https://www.npmjs.com/) (included with Node.js)
-
-### 1. Clone the Repository
+If you'd like to inspect the code or build custom modifications:
 
 ```bash
+# 1. Clone the repository
 git clone https://github.com/gui-bus/MediaMorph.git
 cd MediaMorph
-```
 
-### 2. Install Dependencies
-
-```bash
+# 2. Install dependencies
 npm install
-```
 
-### 3. Run in Development Mode
-
-```bash
+# 3. Run in development mode
 npm run dev
-```
 
-### 4. Build and Package Executable (`.exe`)
-
-```bash
-# Compiles TypeScript, Vite bundle, Electron binaries and creates portable executable
+# 4. Package portable executable
 npm run build
 ```
 
-The standalone production executable will be created at:
-📂 **`release/1.0.0/MediaMorph-Portable-1.0.0.exe`**
-
----
-
-## 📑 Available Scripts
-
-* `npm run dev`: Starts the Vite dev server and launches the Electron application window.
-* `npm run build`: Compiles the frontend and packages the standalone Electron executable.
-* `npm run build:frontend`: Runs type checking with `tsc` and builds production assets via Vite.
-* `npm run build:exe`: Compiles and packages the Windows executable (`.exe`) with official icon patching.
-* `npm run strip-comments`: Automatically strips source-code comments for clean production deployments.
+</details>
 
 ---
 

@@ -34,6 +34,7 @@ Abaixo está o catálogo completo de todas as funcionalidades, operações e man
 
 ### 🖼️ 1. Imagens & Ícones
 - **Conversão e Compressão Multiformato:** Converta entre **PNG, JPG/JPEG, WebP, AVIF, GIF, TIFF, BMP, SVG e ICO**.
+- **Compressor Nativo Inteligente (*Estilo TinyPNG / MozJPEG*):** Opção de manter o formato original (PNG continua PNG, JPG continua JPG) aplicando quantização de cores nível 9 e compressão MozJPEG para reduzir até 70-80% do tamanho do arquivo.
 - **Marca d'Água em Lote (Watermark):**
   - Aplicação de **Texto** personalizado ou **Logotipo PNG** transparente.
   - Controle de opacidade (10% a 100%), tamanho e posicionamento (*Centro, Cantos Superior/Inferior Esquerdo e Direito*).
@@ -80,6 +81,7 @@ Abaixo está o catálogo completo de todas as funcionalidades, operações e man
 ---
 
 ### 📄 4. Documentos PDF
+- **Compressão Direta de PDF (Reduzir MBs):** Comprima documentos PDF pesados (ex: 50 MB para 5 MB) com presets inteligentes (*Recomendado 70%, Alta Fidelidade 85%, Extrema 50%*), mantendo a diagramação e paginação perfeitas.
 - **Imagens ➔ PDF Único:** Combine e compile dezenas de imagens em um único arquivo PDF de alta definição com ordenação flexível e compressão visual ajustável.
 - **PDF ➔ Extração de Páginas em Imagens:** Carregue qualquer arquivo PDF e extraia cada página individualmente como imagem nos formatos **WebP, PNG, JPEG, AVIF ou TIFF** com escala de 150 a 450 DPI.
 - **Mesclar Múltiplos PDFs (Merge PDF):** Una múltiplos arquivos PDF em um único documento contínuo na ordem da fila.
@@ -98,84 +100,19 @@ Abaixo está o catálogo completo de todas as funcionalidades, operações e man
 
 ---
 
-## 🛠️ Stack Tecnológica
+## 🚀 Como Baixar e Usar (Versão Portátil)
 
-<div align="center">
-  <img alt="Electron" height="60" width="60" src="https://github.com/gui-bus/TechIcons/blob/main/Dark/Electron.svg">
-  <img alt="React" height="60" width="60" src="https://github.com/gui-bus/TechIcons/blob/main/Dark/React.svg">
-  <img alt="Typescript" height="60" width="60" src="https://github.com/gui-bus/TechIcons/blob/main/Dark/Typescript.svg">
-  <img alt="NodeJS" height="60" width="60" src="https://github.com/gui-bus/TechIcons/blob/main/Dark/NodeJS.svg">
-  <img alt="FFmpeg" height="60" width="60" src="https://github.com/gui-bus/TechIcons/blob/main/Dark/FFmpeg.svg">
-  <img alt="Sharp" height="60" width="60" src="https://github.com/gui-bus/TechIcons/blob/main/Dark/Sharp.svg">
-  <img alt="PDF-Lib" height="60" width="60" src="https://github.com/gui-bus/TechIcons/blob/main/Dark/PDF-Lib.svg">
-  <img alt="Vite" height="60" width="60" src="https://github.com/gui-bus/TechIcons/blob/main/Dark/Vite.svg">
-  <img alt="TailwindCSS" height="60" width="60" src="https://github.com/gui-bus/TechIcons/blob/main/Dark/TailwindCSS.svg">
-  <img alt="PostCSS" height="60" width="60" src="https://github.com/gui-bus/TechIcons/blob/main/Dark/PostCSS.svg">
-  <img alt="Lucide" height="60" width="60" src="https://github.com/gui-bus/TechIcons/blob/main/Dark/Lucide.svg">
-  <img alt="Windows" height="60" width="60" src="https://github.com/gui-bus/TechIcons/blob/main/Dark/Windows.svg">
-  <img alt="npm" height="60" width="60" src="https://github.com/gui-bus/TechIcons/blob/main/Dark/npm.svg">
-  <img alt="GIT" height="60" width="60" src="https://github.com/gui-bus/TechIcons/blob/main/Dark/GIT.svg">
-  <img alt="Conventional Commits" height="60" width="60" src="https://github.com/gui-bus/TechIcons/blob/main/Dark/Conventional%20Commits.svg">
-  <img alt="Github Actions" height="60" width="60" src="https://github.com/gui-bus/TechIcons/blob/main/Dark/Github%20Actions.svg">
-</div>
+O **MediaMorph** é distribuído como um aplicativo **portátil para Windows (64-bit)**. Você não precisa instalar nada, nem configurar dependências como Node.js ou FFmpeg!
 
----
+### 📥 Passo a Passo para Download:
 
-## 🏛️ Arquitetura do Sistema
+1. Acesse a página oficial de lançamentos: **[GitHub Releases - MediaMorph](https://github.com/gui-bus/MediaMorph/releases)**
+2. Na versão mais recente (ex: `v1.0.0`), baixe o executável portátil:
+   👉 **`MediaMorph-Portable-1.0.0.exe`**
+3. Dê dois cliques no arquivo baixado e comece a converter, comprimir e editar suas mídias instantaneamente!
 
-```mermaid
-graph TB
-    subgraph Frontend ["🎨 Processo de Renderização (UI / React 18)"]
-        UI["🖥️ Interface Principal & Dashboard"]
-        Explorer["📂 Explorador de Arquivos com Thumbnails"]
-        Trimmer["✂️ Cortador Visual de Vídeo com Loop"]
-        AudioPlayer["🎵 Mini Player de Áudio Inline"]
-        Dropzone["📥 Drag & Drop de Arquivos e Pastas"]
-        Settings["⚙️ Configurações Globais, Watermark & Filtros"]
-        Presets["⭐ Gerenciador de Presets do Usuário"]
-        Comparator["🖼️ Comparador Antes vs Depois (Split Slider)"]
-    end
-
-    subgraph IPC ["⚡ Ponte de Comunicação Segura (Electron Preload)"]
-        Bridge["🔒 contextBridge / electronAPI"]
-    end
-
-    subgraph Backend ["⚙️ Processo Principal (Node.js & Electron Main)"]
-        Main["🧠 Electron Main Process"]
-        ImgService["🖼️ imageService (Sharp, Watermark & Filters)"]
-        VidService["🎬 videoService (FFmpeg, GPU NVENC & Audio Extractor)"]
-        AudService["🎵 audioService (FFmpeg Audio Core)"]
-        PdfService["📄 pdfService (PDF-Lib & PDF.js Engine)"]
-    end
-
-    subgraph Native ["💻 Sistema Operacional & Hardware"]
-        FS["📁 Sistema de Arquivos Local (Windows)"]
-        HW["⚡ Aceleração Gráfica por GPU (NVENC/QSV/AMF)"]
-    end
-
-    UI --> Bridge
-    Explorer --> Bridge
-    Trimmer --> Bridge
-    AudioPlayer --> Bridge
-    Dropzone --> Bridge
-    Settings --> Bridge
-    Presets --> Bridge
-    Comparator --> Bridge
-
-    Bridge --> Main
-    Main --> ImgService
-    Main --> VidService
-    Main --> AudService
-    Main --> PdfService
-
-    ImgService --> FS
-    VidService --> FS
-    AudService --> FS
-    PdfService --> FS
-
-    VidService -.->|Aceleração GPU| HW
-    Trimmer -.->|Stream Local file:///| HW
-```
+> [!TIP]
+> Por ser 100% portátil, você pode colocar o executável em um pen drive ou em qualquer pasta do computador e usá-lo diretamente, sem instalador e sem necessidade de permissões de administrador.
 
 ---
 
@@ -183,58 +120,36 @@ graph TB
 
 | Mídia | Formatos de Entrada | Formatos de Saída | Principais Capacidades |
 | :--- | :--- | :--- | :--- |
-| **Imagens** | PNG, JPG, JPEG, WebP, AVIF, TIFF, GIF, SVG, BMP, ICO | WebP, AVIF, JPEG, PNG, GIF, TIFF, ICO | Marca d'água (texto/logo), filtros de cor (brilho/contraste/saturação/nitidez), rotação/espelho, densidade SVG, presets sociais, EXIF removal, `.ico` multicamadas. |
+| **Imagens** | PNG, JPG, JPEG, WebP, AVIF, TIFF, GIF, SVG, BMP, ICO | WebP, AVIF, JPEG, PNG, GIF, TIFF, ICO | Compressor TinyPNG, marca d'água (texto/logo), filtros de cor (brilho/contraste/saturação/nitidez), rotação/espelho, densidade SVG, presets sociais, EXIF removal, `.ico` multicamadas. |
 | **Vídeos** | MP4, MKV, MOV, AVI, WebM, FLV, WMV, M4V, 3GP | MP4, WebM, MKV, GIF, MP3, WAV, FLAC, AAC, OGG | Aceleração por GPU (NVENC/QSV/AMF), FPS (24/30/60), velocidade (0.5x-4x), crop (9:16, 1:1, 16:9), corte visual interativo, limite em MB. |
 | **Áudios** | MP3, WAV, FLAC, AAC, OGG, M4A, WMA, AIFF | MP3, WAV, FLAC, AAC, OGG | Mini audio player integrado, taxa de bits personalizada (128k - 320k), mixagem estéreo/mono, normalização de volume. |
-| **Documentos PDF** | PNG, JPG, JPEG, WebP, AVIF, TIFF, PDF | PDF (.pdf), WebP, PNG, JPEG, AVIF, TIFF | União de fotos em PDF único, extração de páginas em imagens (150 - 450 DPI), mesclagem de múltiplos PDFs, divisão de páginas. |
+| **Documentos PDF** | PNG, JPG, JPEG, WebP, AVIF, TIFF, PDF | PDF (.pdf), WebP, PNG, JPEG, AVIF, TIFF | Compressão de PDF (50 MB ➔ 5 MB), união de fotos em PDF único, extração de páginas em imagens (150 - 450 DPI), mesclagem de múltiplos PDFs, divisão de páginas. |
 
 ---
 
-## 📦 Instalação & Execução Local
+<details>
+<summary>💻 <strong>Para Desenvolvedores (Compilação a partir do Código-Fonte)</strong></summary>
 
-### Pré-requisitos
+<br />
 
-* [Node.js](https://nodejs.org/) versão 18.0.0 ou superior
-* [NPM](https://www.npmjs.com/) (incluso no Node.js) ou gerenciador de pacotes equivalente
-
-### 1. Clonar o Repositório
+Se você deseja inspecionar o código ou criar modificações personalizadas:
 
 ```bash
+# 1. Clonar o repositório
 git clone https://github.com/gui-bus/MediaMorph.git
 cd MediaMorph
-```
 
-### 2. Instalar Dependências
-
-```bash
+# 2. Instalar dependências
 npm install
-```
 
-### 3. Executar em Modo de Desenvolvimento
-
-```bash
+# 3. Executar em modo desenvolvimento
 npm run dev
-```
 
-### 4. Compilar e Gerar o Executável (`.exe`)
-
-```bash
-# Compila o TypeScript, o bundle do Vite, os binários do Electron e gera o executável portátil
+# 4. Gerar o executável portátil
 npm run build
 ```
 
-O executável standalone pronto para uso será gerado na pasta:
-📂 **`release/1.0.0/MediaMorph-Portable-1.0.0.exe`**
-
----
-
-## 📑 Scripts Disponíveis
-
-* `npm run dev`: Inicia o servidor de desenvolvimento Vite e abre a janela do Electron.
-* `npm run build`: Compila o frontend e cria o executável standalone do Electron via electron-builder.
-* `npm run build:frontend`: Realiza a checagem de tipos com `tsc` e compila os assets estáticos via Vite.
-* `npm run build:exe`: Compila e empacota o executável Windows com ícone oficial.
-* `npm run strip-comments`: Remove automaticamente comentários do código-fonte para builds de produção limpos.
+</details>
 
 ---
 
