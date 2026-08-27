@@ -79,37 +79,37 @@ export const PdfSettings: React.FC<PdfSettingsProps> = ({ settings, onChange, di
 
   const compressPresetOptions: SelectOption[] = [
     {
-      value: '70',
-      label: 'Recomendado (70% Qualidade)',
-      desc: 'Excelente equilíbrio entre legibilidade perfeita e grande redução de peso',
+      value: '65',
+      label: 'Recomendado (65% - Equilibrado)',
+      desc: 'Redução de 70% a 90% do tamanho com leitura e texto 100% nítidos',
       badge: 'Recomendado',
     },
     {
-      value: '85',
-      label: 'Leve / Alta Nitidez (85% Qualidade)',
+      value: '75',
+      label: 'Alta Nitidez (75% - Gráficos)',
       desc: 'Preserva detalhes finos para impressão e leitura de gráficos',
       badge: 'Alta Fidelidade',
     },
     {
-      value: '50',
-      label: 'Extrema (50% Qualidade)',
-      desc: 'Máxima redução para anexos pesados de e-mail ou WhatsApp',
+      value: '45',
+      label: 'Extrema (45% - WhatsApp / Email)',
+      desc: 'Máxima redução para anexos com limite rígido (< 2 MB)',
       badge: 'Super Leve',
     },
     {
       value: 'custom',
       label: 'Personalizado',
-      desc: 'Defina a taxa exata no controle deslizante abaixo',
+      desc: 'Defina a taxa exata no controle deslizante',
     },
   ]
 
   const currentCompressPreset =
-    settings.compressQuality === 70
-      ? '70'
-      : settings.compressQuality === 85
-      ? '85'
-      : settings.compressQuality === 50
-      ? '50'
+    settings.compressQuality === 65
+      ? '65'
+      : settings.compressQuality === 75
+      ? '75'
+      : settings.compressQuality === 45
+      ? '45'
       : 'custom'
 
   return (

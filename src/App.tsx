@@ -139,7 +139,7 @@ export function App() {
     extractFormat: 'webp',
     extractScale: 2,
     extractQuality: 85,
-    compressQuality: 80,
+    compressQuality: 65,
     splitRange: '',
   })
 
@@ -388,7 +388,8 @@ export function App() {
             const base64 = await (window as any).electronAPI.readFileBase64(item.path)
             if (!base64) throw new Error('Não foi possível ler o arquivo PDF')
 
-            const scale = (pdfSettings.compressQuality || 70) >= 80 ? 2.0 : 1.5
+            const q = pdfSettings.compressQuality || 65
+            const scale = q >= 80 ? 1.33 : q >= 60 ? 1.15 : 1.0
             const pages = await extractPagesFromPdf(
               base64,
               scale,

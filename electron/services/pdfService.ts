@@ -382,40 +382,71 @@ export async function compressPdf(options: CompressPdfOptions): Promise<PdfProce
     }
     await fs.mkdir(path.dirname(outputPath), { recursive: true })
 
-    const pdfDoc = await PDFDocument.create()
-    const quality = options.quality || 70
+    const rawQuality = options.quality || 65
+    const quality = Math.max(20, Math.min(rawQuality, 75))
+    const maxDim = quality >= 75 ? 1200 : quality >= 60 ? 1000 : 850
 
-    for (const pageItem of options.pages) {
-      const base64Data = pageItem.dataUrl.replace(/^data:image\/\w+;base64,/, '')
-      const imgBuffer = Buffer.from(base64Data, 'base64')
+    const buildPdf = async (q: number, dim: number): Promise<Buffer> => {
+      const pdfDoc = await PDFDocument.create()
 
-      const jpegBuffer = await sharp(imgBuffer)
-        .jpeg({ quality, mozjpeg: true })
-        .toBuffer()
+      for (const pageItem of options.pages) {
+        const base64Data = pageItem.dataUrl.replace(/^data:image\/\w+;base64,/, '')
+        const imgBuffer = Buffer.from(base64Data, 'base64')
 
-      const embeddedImage = await pdfDoc.embedJpg(jpegBuffer)
-      const targetW = pageItem.width || embeddedImage.width
-      const targetH = pageItem.height || embeddedImage.height
+        const jpegBuffer = await sharp(imgBuffer)
+          .resize(dim, dim, { fit: 'inside', withoutEnlargement: true })
+          .jpeg({
+            quality: q,
+            mozjpeg: true,
+            progressive: true,
+            trellisQuantisation: true,
+            overshootDeringing: true,
+            optimizeScans: true,
+            chromaSubsampling: '4:2:0',
+          })
+          .toBuffer()
 
-      const page = pdfDoc.addPage([targetW, targetH])
-      page.drawImage(embeddedImage, {
-        x: 0,
-        y: 0,
-        width: targetW,
-        height: targetH,
-      })
+        const embeddedImage = await pdfDoc.embedJpg(jpegBuffer)
+        const targetW = pageItem.width || embeddedImage.width
+        const targetH = pageItem.height || embeddedImage.height
+
+        const page = pdfDoc.addPage([targetW, targetH])
+        page.drawImage(embeddedImage, {
+          x: 0,
+          y: 0,
+          width: targetW,
+          height: targetH,
+        })
+      }
+
+      const bytes = await pdfDoc.save()
+      return Buffer.from(bytes)
     }
 
-    const pdfBytes = await pdfDoc.save()
-    await fs.writeFile(outputPath, pdfBytes)
+    let pdfBuffer = await buildPdf(quality, maxDim)
+
+    if (originalTotalSize > 0 && pdfBuffer.length >= originalTotalSize) {
+      const aggressiveBuffer = await buildPdf(Math.min(quality, 50), 750)
+      if (aggressiveBuffer.length < pdfBuffer.length) {
+        pdfBuffer = aggressiveBuffer
+      }
+    }
+
+    if (originalTotalSize > 0 && pdfBuffer.length > originalTotalSize) {
+      await fs.copyFile(options.pdfPath, outputPath)
+    } else {
+      await fs.writeFile(outputPath, pdfBuffer)
+    }
+
     const outStat = await fs.stat(outputPath)
+    const pageCount = options.pages.length
 
     return {
       success: true,
       outputPath,
       originalTotalSize,
       newSize: outStat.size,
-      pageCount: pdfDoc.getPageCount(),
+      pageCount,
       durationMs: Date.now() - startTime,
     }
   } catch (err: any) {
