@@ -1,5 +1,6 @@
 {
   "name": "mediamorph",
+  "type": "module",
   "version": "1.0.0",
   "description": "Desktop Image & Video Compressor and Converter for Windows",
   "main": "dist-electron/main.js",
