@@ -1,0 +1,40 @@
+
+{
+  "appId": "com.mediamorph.app",
+  "productName": "MediaMorph",
+  "directories": {
+    "output": "release/${version}"
+  },
+  "files": [
+    "dist",
+    "dist-electron",
+    "!node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
+    "!node_modules/*/{test,__tests__,tests,example,examples}",
+    "!node_modules/*.d.ts",
+    "!node_modules/.bin"
+  ],
+  "asar": true,
+  "asarUnpack": [
+    "**/node_modules/sharp/**",
+    "**/node_modules/@ffmpeg-installer/**",
+    "**/node_modules/@ffprobe-installer/**",
+    "**/*.node"
+  ],
+  "win": {
+    "icon": "build/icon.ico",
+    "signAndEditExecutable": false,
+    "target": [
+      {
+        "target": "dir",
+        "arch": ["x64"]
+      },
+      {
+        "target": "portable",
+        "arch": ["x64"]
+      }
+    ]
+  },
+  "portable": {
+    "artifactName": "${productName}-Portable-${version}.${ext}"
+  }
+}
