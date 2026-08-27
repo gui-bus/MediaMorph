@@ -12,7 +12,7 @@ import { processAudio, AudioProcessOptions } from './services/audioService'
 import { convertImagesToPdf, ImagesToPdfOptions, savePdfPagesToImages, SavePdfPagesOptions, mergePdfs, MergePdfsOptions, splitPdf, SplitPdfOptions, compressPdf, CompressPdfOptions } from './services/pdfService'
 
 if (process.platform === 'win32') {
-  app.setAppUserModelId('com.mediamorph.app')
+  app.setAppUserModelId('MediaMorph')
 }
 
 const __filename = fileURLToPath(import.meta.url)
