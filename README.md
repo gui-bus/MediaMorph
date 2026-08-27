@@ -18,7 +18,7 @@ O **MediaMorph** é um aplicativo desktop open-source de alta performance para *
 Projetado para criadores de conteúdo, desenvolvedores, designers e usuários exigentes, o MediaMorph une um motor de renderização multimídia de padrão industrial a uma interface moderna, responsiva, com suporte completo a temas claro/escuro e um explorador de arquivos integrado nativo.
 
 <div align="center">
-  <img src="https://img.shields.io/badge/Electron-33.2.0-47848F?style=for-the-badge&logo=electron&logoColor=white" alt="Electron Version" />
+  <img src="https://img.shields.io/badge/Electron-33.4.11-47848F?style=for-the-badge&logo=electron&logoColor=white" alt="Electron Version" />
   <img src="https://img.shields.io/badge/React-18.3.1-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React Version" />
   <img src="https://img.shields.io/badge/TypeScript-5.6.3-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript Version" />
   <img src="https://img.shields.io/badge/TailwindCSS-3.4.15-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="Tailwind CSS" />
@@ -28,34 +28,73 @@ Projetado para criadores de conteúdo, desenvolvedores, designers e usuários ex
 
 ---
 
-## 🚀 Principais Recursos
+## ⚡ O Que Você Pode Fazer com o MediaMorph
 
-- 🖼️ **Processamento Avançado de Imagens:**
-  - Conversão e compressão com perdas (*lossy*) ou sem perdas (*lossless*) para **WebP, AVIF, JPEG, PNG, GIF e TIFF**.
-  - Geração nativa de arquivos de ícone do Windows (**`.ico`**) com redimensionamento automático para atalhos e executáveis.
-  - Redimensionamento inteligente com presets de redes sociais (*Instagram Story 9:16, Feed 1:1, YouTube Thumbnail 16:9, Twitter Banner 3:1, Favicon 32x32*).
-  - Remoção opcional de metadados EXIF e preservação de canal alfa/transparência.
-  - Visualizador interativo comparativo **Antes vs Depois** (*Split Slider*) com cálculo de redução de peso em tempo real.
+Abaixo está o catálogo completo de todas as funcionalidades, operações e manipulações disponíveis:
 
-- 🎬 **Otimização de Vídeo & Cortador Visual:**
-  - Codificação de alta eficiência com **FFmpeg** para **MP4 (H.264), WebM (VP9), MKV, GIF animado** ou extração direta da faixa de áudio em **MP3**.
-  - Modos inteligentes de limitação de tamanho para uploads rápidos (*Discord 25MB/8MB, WhatsApp 16MB, 50MB*) ou controle manual de taxa de compressão (*CRF 18-35*).
-  - **Cortador Visual Integrado:** Régua com sliders interativos de ponto inicial e final, pré-visualização contínua com reprodução em loop estritamente no trecho selecionado.
-  - Opção para remover faixa de áudio e silenciar vídeos com 1 clique.
+### 🖼️ 1. Imagens & Ícones
+- **Conversão e Compressão Multiformato:** Converta entre **PNG, JPG/JPEG, WebP, AVIF, GIF, TIFF, BMP, SVG e ICO**.
+- **Compressão com Perdas (*Lossy*) ou Sem Perdas (*Lossless*):** Controle deslizante de qualidade visual de 1 a 100% ou compressão matemática sem perda de qualidade.
+- **Gerador Nativo de Ícones Windows (`.ico`):** Transforme qualquer imagem em um arquivo de ícone de múltiplas camadas (256x256, 128x128, 64x64, 48x48, 32x32, 16x16) para executáveis e atalhos.
+- **Redimensionamento por Escala e Resolução:**
+  - Redimensionamento percentual livre (*25%, 50%, 75%, 100%, 150%, 200%*).
+  - Largura e altura personalizadas com bloqueio de proporção (*Aspect Ratio*).
+- **Presets Rápidos para Redes Sociais & Web:**
+  - *Instagram Story / Reels (1080x1920 - 9:16)*
+  - *Instagram Post / Feed (1080x1080 - 1:1)*
+  - *Instagram Retrato (1080x1350 - 4:5)*
+  - *YouTube Thumbnail (1280x720 - 16:9)*
+  - *Banner Twitter/X (1500x500 - 3:1)*
+  - *Post Twitter/X (1200x675 - 16:9)*
+  - *Favicon Web (32x32)*
+  - *Full HD (1920x1080) e 4K Ultra HD (3840x2160)*
+- **Remoção de Metadados EXIF:** Exclua dados sensíveis de localização GPS, modelo da câmera e data/hora para proteger sua privacidade.
+- **Comparador Antes & Depois (*Split Slider*):** Visualize as imagens original e comprimida lado a lado com divisor interativo, zoom e porcentagem de economia de espaço em tempo real.
 
-- 🎵 **Conversão e Tratamento de Áudio:**
-  - Suporte a **MP3, WAV, FLAC, AAC e OGG**.
-  - Controle de taxa de bits (bitrate), mixagem de canais (*Estéreo/Mono*) e normalização dinâmica de volume.
+---
 
-- 📄 **Compilador de Documentos PDF:**
-  - Junção e união de múltiplas imagens em lote em um único arquivo PDF de alta definição com ordenação flexível e compressão de páginas.
+### 🎬 2. Vídeos & Animações
+- **Conversão de Alta Eficiência:** Converta vídeos entre **MP4 (H.264), WebM (VP9), MKV, AVI, MOV, FLV, WMV, M4V e 3GP**.
+- **Gerador de GIF Animado:** Transforme qualquer trecho de vídeo em um GIF animado leve e fluido.
+- **Extração Direta de Áudio:** Extraia a trilha sonora de qualquer vídeo diretamente para **MP3** com alta fidelidade.
+- **Modos Inteligentes de Limitação de Tamanho:**
+  - *Discord Free (Limite de 25 MB ou 8 MB)*
+  - *WhatsApp (Limite de 16 MB)*
+  - *Email / Anexo Rápido (Limite de 50 MB)*
+- **Controle de Compressão CRF (*Constant Rate Factor*):** Ajuste fino de taxa de bits entre CRF 18 (qualidade de estúdio) e CRF 35 (máxima economia de espaço).
+- **Redimensionamento de Vídeo:** Downscaling inteligente para *4K (2160p), Full HD (1080p), HD (720p), SD (480p) e 360p*.
+- **Cortador Visual Integrado (*Video Trimmer*):** Régua interativa de linha do tempo com ajuste fino de ponto inicial e final, pré-visualização contínua e reprodução em loop estritamente no trecho selecionado.
+- **Remoção de Áudio com 1 Clique:** Exporte vídeos totalmente mudos (*Mute*) para redes sociais ou apresentações.
+- **Miniaturas (*Thumbnails*) Automáticas:** Captura instantânea de frame visual para visualização rápida no explorador e na fila.
 
-- 📂 **Explorador de Arquivos Integrado:**
-  - Navegação nativa em árvore pelo disco rígido e atalhos rápidos de sistema (*Downloads, Imagens, Vídeos, Documentos, Desktop, Disco C:*).
-  - Importação de pastas inteiras com detecção recursiva de mídias suportadas.
+---
 
-- 🌓 **Temas Claro e Escuro:**
-  - Interface responsiva adaptável com contraste balanceado (`#161616` para tema escuro e `#f1f1f1` para tema claro), personalizada na identidade visual `#10B981` e `#12F7AB`.
+### 🎵 3. Áudios & Músicas
+- **Conversão de Áudio:** Suporte completo para **MP3, WAV, FLAC, AAC, OGG, M4A, WMA e AIFF**.
+- **Controle de Taxa de Bits (*Bitrate*):** Seleção de qualidade entre *128 kbps (econômico), 192 kbps (equilibrado), 256 kbps (alta qualidade) e 320 kbps (estúdio)*.
+- **Mixagem de Canais:** Alterne entre áudio **Estéreo** e **Mono**.
+- **Normalização de Volume Dinâmica:** Nivele faixas de áudio baixas ou com picos excessivos automaticamente.
+
+---
+
+### 📄 4. Documentos PDF
+- **Imagens ➔ PDF Único:** Combine e compile dezenas de imagens em um único arquivo PDF de alta definição com ordenação flexível e compressão visual ajustável.
+- **PDF ➔ Extração de Páginas em Imagens:** Carregue qualquer arquivo PDF e extraia cada página individualmente como imagem nos formatos **WebP, PNG, JPEG, AVIF ou TIFF**.
+- **Controle de Escala e Resolução DPI de Extração:**
+  - `1.0x (~150 DPI)` - Ideal para visualização rápida na tela.
+  - `2.0x (~300 DPI)` - Qualidade de impressão e leitura nítida de textos.
+  - `3.0x (~450 DPI)` - Resolução ultra-alta para gráficos, diagramas e detalhes minuciosos.
+
+---
+
+### 📂 5. Gerenciamento, Fila & Produtividade
+- **Explorador de Arquivos Integrado:** Navegue pela árvore de diretórios do seu computador sem sair do app, com atalhos para *Downloads, Área de Trabalho, Imagens, Vídeos, Documentos e Disco Local (C:)*.
+- **Importação de Pastas Inteiras:** Selecione uma pasta e deixe o MediaMorph varrer recursivamente todas as mídias compatíveis para a fila com um único clique.
+- **Drag & Drop Inteligente:** Arraste e solte arquivos individuais ou pastas inteiras direto na interface.
+- **Processamento em Lote com Barra de Progresso:** Acompanhe o progresso individual e coletivo de conversão em tempo real.
+- **Configuração Global e Individual:** Aplique uma regra geral para todos os itens ou ajuste formatos e resoluções arquivo por arquivo.
+- **Estatísticas Históricas de Economia:** Painel com total de arquivos convertidos, tempo economizado e gigabytes de armazenamento liberados.
+- **100% Local & Seguro:** Nenhum arquivo é enviado para servidores externos ou nuvem. Tudo roda na sua máquina com privacidade total.
 
 ---
 
@@ -84,16 +123,15 @@ Projetado para criadores de conteúdo, desenvolvedores, designers e usuários ex
 
 ## 🏛️ Arquitetura do Sistema
 
-O MediaMorph adota uma arquitetura modular em camadas, desacoplando o processo de renderização da interface do motor de processamento nativo via IPC (*Inter-Process Communication*):
-
 ```mermaid
 graph TB
     subgraph Frontend ["🎨 Processo de Renderização (UI / React 18)"]
         UI["🖥️ Interface Principal & Dashboard"]
-        Explorer["📂 Explorador de Arquivos Integrado"]
+        Explorer["📂 Explorador de Arquivos com Thumbnails"]
         Trimmer["✂️ Cortador Visual de Vídeo com Loop"]
         Dropzone["📥 Drag & Drop de Arquivos e Pastas"]
         Settings["⚙️ Configurações Globais & Individuais"]
+        Comparator["🖼️ Comparador Antes vs Depois (Split Slider)"]
     end
 
     subgraph IPC ["⚡ Ponte de Comunicação Segura (Electron Preload)"]
@@ -102,10 +140,10 @@ graph TB
 
     subgraph Backend ["⚙️ Processo Principal (Node.js & Electron Main)"]
         Main["🧠 Electron Main Process"]
-        ImgService["🖼️ imageService (Sharp & png-to-ico)"]
+        ImgService["🖼️ imageService (Sharp & ICO Generator)"]
         VidService["🎬 videoService (FFmpeg & FFprobe)"]
         AudService["🎵 audioService (FFmpeg Audio Core)"]
-        PdfService["📄 pdfService (PDF-Lib Engine)"]
+        PdfService["📄 pdfService (PDF-Lib & PDF.js Engine)"]
     end
 
     subgraph Native ["💻 Sistema Operacional & Hardware"]
@@ -118,6 +156,7 @@ graph TB
     Trimmer --> Bridge
     Dropzone --> Bridge
     Settings --> Bridge
+    Comparator --> Bridge
 
     Bridge --> Main
     Main --> ImgService
@@ -135,14 +174,14 @@ graph TB
 
 ---
 
-## 📊 Formatos & Operações Suportadas
+## 📊 Tabela de Formatos & Operações
 
 | Mídia | Formatos de Entrada | Formatos de Saída | Principais Capacidades |
 | :--- | :--- | :--- | :--- |
-| **Imagens** | PNG, JPG, JPEG, WebP, AVIF, TIFF, GIF, SVG, BMP, ICO | WebP, AVIF, JPEG, PNG, GIF, TIFF, ICO | Redimensionamento por escala/dimensão, presets sociais, remoção de EXIF, modo lossless, geração de `.ico`. |
-| **Vídeos** | MP4, MKV, MOV, AVI, WebM, FLV, WMV, M4V, 3GP | MP4 (H.264), WebM (VP9), MKV, GIF, MP3 | Compressão por CRF, limite em MB (Discord/WhatsApp), redimensionamento para 1080p/720p/480p/360p, corte visual interativo, mutar áudio. |
-| **Áudios** | MP3, WAV, FLAC, AAC, OGG, M4A, WMA | MP3, WAV, FLAC, AAC, OGG | Ajuste de bitrate (128k - 320k), mixagem estéreo/mono, normalização de volume. |
-| **Documentos**| PNG, JPG, JPEG, WebP, AVIF, TIFF | PDF (.pdf) | Junção de múltiplas imagens em documento único, ordenação de páginas, compressão ajustável. |
+| **Imagens** | PNG, JPG, JPEG, WebP, AVIF, TIFF, GIF, SVG, BMP, ICO | WebP, AVIF, JPEG, PNG, GIF, TIFF, ICO | Redimensionamento livre/presets sociais, remoção de EXIF, modo lossless, geração de `.ico` multicamadas. |
+| **Vídeos** | MP4, MKV, MOV, AVI, WebM, FLV, WMV, M4V, 3GP | MP4 (H.264), WebM (VP9), MKV, GIF, MP3 | Compressão por CRF, limite em MB (Discord/WhatsApp), downscaling para 1080p/720p/480p, cortador visual interativo, mutar áudio. |
+| **Áudios** | MP3, WAV, FLAC, AAC, OGG, M4A, WMA, AIFF | MP3, WAV, FLAC, AAC, OGG | Taxa de bits personalizada (128k - 320k), mixagem estéreo/mono, normalização de volume. |
+| **Documentos PDF** | PNG, JPG, JPEG, WebP, AVIF, TIFF, PDF | PDF (.pdf), WebP, PNG, JPEG, AVIF, TIFF | União de fotos em PDF único, extração de páginas em imagens de alta definição (150 - 450 DPI). |
 
 ---
 
@@ -175,21 +214,21 @@ npm run dev
 ### 4. Compilar e Gerar o Executável (`.exe`)
 
 ```bash
-# Compila o TypeScript, o bundle do Vite, os binários do Electron e aplica o ícone oficial
-npm run build:exe
+# Compila o TypeScript, o bundle do Vite, os binários do Electron e gera o executável portátil
+npm run build
 ```
 
 O executável standalone pronto para uso será gerado na pasta:
-📂 **`release/1.0.0/win-unpacked/MediaMorph.exe`**
+📂 **`release/1.0.0/MediaMorph-Portable-1.0.0.exe`**
 
 ---
 
 ## 📑 Scripts Disponíveis
 
 * `npm run dev`: Inicia o servidor de desenvolvimento Vite e abre a janela do Electron.
-* `npm run build`: Compila o frontend e cria o pacote base do Electron.
+* `npm run build`: Compila o frontend e cria o executável standalone do Electron via electron-builder.
 * `npm run build:frontend`: Realiza a checagem de tipos com `tsc` e compila os assets estáticos via Vite.
-* `npm run build:exe`: Compila e empacota o executável Windows (`.exe`) com ícone oficial injetado via `rcedit`.
+* `npm run build:exe`: Compila e empacota o executável Windows com ícone oficial.
 * `npm run strip-comments`: Remove automaticamente comentários do código-fonte para builds de produção limpos.
 
 ---
@@ -197,4 +236,3 @@ O executável standalone pronto para uso será gerado na pasta:
 ## 📄 Licença
 
 Este projeto é distribuído sob a licença **MIT**. Consulte o arquivo [LICENSE](./LICENSE) para mais detalhes.
-
