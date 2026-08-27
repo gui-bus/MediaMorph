@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   MediaTab,
-  ThemeMode,
   FileItem,
+  ThemeMode,
   ImageGlobalSettings,
   VideoGlobalSettings,
   AudioGlobalSettings,
@@ -26,6 +26,7 @@ import { HistoryDrawer } from './components/HistoryDrawer'
 import { FileSettingsModal } from './components/FileSettingsModal'
 import { IntegratedFileExplorer } from './components/IntegratedFileExplorer'
 import { VideoTrimmerModal } from './components/VideoTrimmerModal'
+import { PresetsModal } from './components/PresetsModal'
 import { extractPagesFromPdf } from './utils/pdfExtractor'
 import { playSuccessSound } from './lib/sound'
 
@@ -37,10 +38,14 @@ export function App() {
   const [activeTab, setActiveTab] = useState<MediaTab>('images')
   const [files, setFiles] = useState<FileItem[]>([])
   const [isProcessing, setIsProcessing] = useState<boolean>(false)
+  const [isPaused, setIsPaused] = useState<boolean>(false)
+  const isPausedRef = useRef<boolean>(false)
+
   const [comparingFile, setComparingFile] = useState<FileItem | null>(null)
   const [settingsModalFile, setSettingsModalFile] = useState<FileItem | null>(null)
   const [trimmingFile, setTrimmingFile] = useState<FileItem | null>(null)
   const [isHistoryOpen, setIsHistoryOpen] = useState<boolean>(false)
+  const [isPresetsOpen, setIsPresetsOpen] = useState<boolean>(false)
 
   const [theme, setTheme] = useState<ThemeMode>(() => {
     return (localStorage.getItem(THEME_STORAGE_KEY) as ThemeMode) || 'dark'
@@ -85,6 +90,25 @@ export function App() {
     maxWidth: 1920,
     maxHeight: 1080,
     stripMetadata: true,
+    watermark: {
+      enabled: false,
+      type: 'text',
+      text: '© MediaMorph',
+      fontSize: 32,
+      color: '#ffffff',
+      opacity: 50,
+      position: 'center',
+    },
+    adjustments: {
+      brightness: 0,
+      contrast: 0,
+      saturation: 0,
+      sharpen: false,
+      rotate: 0,
+      flipHorizontal: false,
+      flipVertical: false,
+      svgScale: 2,
+    },
   })
 
   const [videoSettings, setVideoSettings] = useState<VideoGlobalSettings>({
@@ -94,6 +118,10 @@ export function App() {
     targetSizeMB: 25,
     resolution: 'original',
     muteAudio: false,
+    speed: 1,
+    gpu: 'auto',
+    crop: 'keep',
+    audioExtractFormat: 'mp3',
   })
 
   const [audioSettings, setAudioSettings] = useState<AudioGlobalSettings>({
@@ -111,11 +139,15 @@ export function App() {
     extractFormat: 'webp',
     extractScale: 2,
     extractQuality: 85,
+    compressQuality: 80,
+    splitRange: '',
   })
 
   const [outputSettings, setOutputSettings] = useState<OutputSettingsState>({
     mode: 'same_directory',
     customPath: '',
+    namingPattern: 'original',
+    customNamingPattern: '{name}_optimized',
   })
 
   useEffect(() => {
@@ -151,16 +183,11 @@ export function App() {
     })
   }
 
-  const handleClearHistory = () => {
-    setHistory([])
-    localStorage.removeItem(HISTORY_STORAGE_KEY)
-  }
-
-  const updateLifetimeStats = (newSavedBytes: number, newFilesCount: number) => {
+  const updateLifetimeStats = (savedBytes: number, fileCount: number) => {
     setLifetimeStats((prev) => {
       const updated = {
-        totalFiles: prev.totalFiles + newFilesCount,
-        totalBytesSaved: prev.totalBytesSaved + newSavedBytes,
+        totalFiles: prev.totalFiles + fileCount,
+        totalBytesSaved: prev.totalBytesSaved + savedBytes,
       }
       try {
         localStorage.setItem(STATS_STORAGE_KEY, JSON.stringify(updated))
@@ -169,26 +196,28 @@ export function App() {
     })
   }
 
-  const handleFilesSelected = (newFiles: Array<any>) => {
+  const handleFilesSelected = (newFiles: any[]) => {
+    const formatted: FileItem[] = newFiles.map((f) => ({
+      id: f.id || `file_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      name: f.name,
+      path: f.path,
+      size: f.size,
+      ext: f.ext,
+      isImage: f.isImage,
+      isVideo: f.isVideo,
+      isAudio: f.isAudio,
+      isPdf: f.isPdf,
+      thumbnail: f.thumbnail,
+      status: f.status || 'idle',
+      progress: f.progress || 0,
+      customSettings: f.customSettings,
+      result: f.result,
+    }))
+
     setFiles((prev) => {
       const existingPaths = new Set(prev.map((f) => f.path))
-      const toAdd: FileItem[] = newFiles
-        .filter((f) => !existingPaths.has(f.path))
-        .map((f) => ({
-          id: `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-          name: f.name,
-          path: f.path,
-          size: f.size,
-          ext: f.ext,
-          isImage: !!f.isImage,
-          isVideo: !!f.isVideo,
-          isAudio: !!f.isAudio,
-          isPdf: !!f.isPdf,
-          thumbnail: f.thumbnail,
-          status: 'idle',
-          progress: 0,
-        }))
-      return [...prev, ...toAdd]
+      const unique = formatted.filter((f) => !existingPaths.has(f.path))
+      return [...prev, ...unique]
     })
   }
 
@@ -201,146 +230,261 @@ export function App() {
   }
 
   const handleClearAll = () => {
-    setFiles([])
-  }
-
-  const handleSaveIndividualSettings = (
-    id: string,
-    customSettings?: { format?: string; quality?: number }
-  ) => {
-    setFiles((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, customSettings } : f))
-    )
-  }
-
-  const handleSaveTrim = (trimStart?: string, trimEnd?: string) => {
-    if (trimmingFile) {
-      setVideoSettings((prev) => ({ ...prev, trimStart, trimEnd }))
-    }
+    setFiles((prev) => prev.filter((f) => f.status === 'processing'))
   }
 
   const handleOpenGlobalTrimmer = () => {
-    const firstVideo = files.find((f) => f.isVideo)
-    if (firstVideo) {
-      setTrimmingFile(firstVideo)
-    } else {
-      if ((window as any).electronAPI) {
-        ;(window as any).electronAPI.selectFiles('videos').then((selected: any[]) => {
-          if (selected && selected.length > 0) {
-            handleFilesSelected(selected)
-            const newItem: FileItem = {
-              id: `${Date.now()}`,
-              name: selected[0].name,
-              path: selected[0].path,
-              size: selected[0].size,
-              ext: selected[0].ext,
-              isImage: false,
-              isVideo: true,
-              isAudio: false,
-              thumbnail: selected[0].thumbnail,
-              status: 'idle',
-              progress: 0,
-            }
-            setTrimmingFile(newItem)
-          }
-        })
-      }
+    const videoFiles = files.filter((f) => f.isVideo)
+    if (videoFiles.length > 0) {
+      setTrimmingFile(videoFiles[0])
     }
   }
 
-  const buildCustomOutputPath = (inputPath: string, targetExt: string) => {
-    if (outputSettings.mode !== 'custom_directory' || !outputSettings.customPath) {
-      return undefined
+  const handleTogglePause = () => {
+    const next = !isPaused
+    setIsPaused(next)
+    isPausedRef.current = next
+  }
+
+  const buildCustomOutputPath = (inputPath: string, targetExt: string, counterIndex: number = 1): string | undefined => {
+    const parsed = (window as any).path ? (window as any).path.parse(inputPath) : {
+      dir: inputPath.substring(0, inputPath.lastIndexOf('\\')),
+      name: inputPath.substring(inputPath.lastIndexOf('\\') + 1, inputPath.lastIndexOf('.')),
     }
-    const parts = inputPath.split(/[\/\\]/)
-    const fileNameWithExt = parts[parts.length - 1]
-    const lastDot = fileNameWithExt.lastIndexOf('.')
-    const baseName = lastDot !== -1 ? fileNameWithExt.substring(0, lastDot) : fileNameWithExt
-    const sep = outputSettings.customPath.includes('\\') || inputPath.includes('\\') ? '\\' : '/'
-    return `${outputSettings.customPath}${sep}${baseName}.${targetExt}`
+
+    const baseDir =
+      outputSettings.mode === 'custom_directory' && outputSettings.customPath
+        ? outputSettings.customPath
+        : (window as any).path
+        ? (window as any).path.join(parsed.dir, 'optimized')
+        : `${parsed.dir}\\optimized`
+
+    const cleanExt = targetExt.startsWith('.') ? targetExt.substring(1) : targetExt
+    const dateStr = new Date().toISOString().split('T')[0]
+    const counterStr = String(counterIndex).padStart(2, '0')
+
+    let baseName = parsed.name
+    const pattern = outputSettings.namingPattern || 'original'
+
+    if (pattern === '{name}_optimized') {
+      baseName = `${parsed.name}_optimized`
+    } else if (pattern === '{name}_{date}') {
+      baseName = `${parsed.name}_${dateStr}`
+    } else if (pattern === '{counter}_{name}') {
+      baseName = `${counterStr}_${parsed.name}`
+    } else if (pattern === 'custom' && outputSettings.customNamingPattern) {
+      baseName = outputSettings.customNamingPattern
+        .replace(/\{name\}/g, parsed.name)
+        .replace(/\{date\}/g, dateStr)
+        .replace(/\{counter\}/g, counterStr)
+        .replace(/\{ext\}/g, cleanExt)
+    }
+
+    const fileName = `${baseName}.${cleanExt}`
+    return (window as any).path ? (window as any).path.join(baseDir, fileName) : `${baseDir}\\${fileName}`
   }
 
   const handleStartProcess = async () => {
     if (isProcessing) return
-    if (!(window as any).electronAPI) return
+    setIsProcessing(true)
+    setIsPaused(false)
+    isPausedRef.current = false
 
     const pending = files.filter((f) => f.status === 'idle' || f.status === 'error')
-    if (pending.length === 0) return
+    if (pending.length === 0) {
+      setIsProcessing(false)
+      return
+    }
 
-    setIsProcessing(true)
     let batchSavedBytes = 0
     let batchCompletedCount = 0
     const newHistoryItems: HistoryItem[] = []
 
     if (activeTab === 'pdf') {
       if (pdfSettings.mode === 'images_to_pdf') {
-        const imageFiles = pending.filter((f) => f.isImage)
-        if (imageFiles.length > 0) {
-          setFiles((prev) =>
-            prev.map((f) => (imageFiles.some((img) => img.id === f.id) ? { ...f, status: 'processing', progress: 50 } : f))
-          )
+        const imagePaths = files.map((f) => f.path)
 
-          let customOut: string | undefined = undefined
-          if (pdfSettings.customPdfName && pdfSettings.customPdfName.trim()) {
-            const rawName = pdfSettings.customPdfName.trim()
-            const pdfName = rawName.endsWith('.pdf') ? rawName : `${rawName}.pdf`
-            if (outputSettings.mode === 'custom_directory' && outputSettings.customPath) {
-              customOut = `${outputSettings.customPath}\\${pdfName}`
-            } else {
-              const firstDir = imageFiles[0].path.substring(0, imageFiles[0].path.lastIndexOf('\\'))
-              customOut = `${firstDir}\\optimized\\${pdfName}`
-            }
-          }
+        setFiles((prev) =>
+          prev.map((f) => ({ ...f, status: 'processing', progress: 50 }))
+        )
 
-          const pdfResult = await (window as any).electronAPI.imagesToPdf({
-            imagePaths: imageFiles.map((f) => f.path),
-            outputPath: customOut,
+        try {
+          const firstDir = files[0].path.substring(0, files[0].path.lastIndexOf('\\'))
+          const customName = pdfSettings.customPdfName?.trim()
+            ? pdfSettings.customPdfName.endsWith('.pdf')
+              ? pdfSettings.customPdfName
+              : `${pdfSettings.customPdfName}.pdf`
+            : `documento_compilado_${Date.now()}.pdf`
+
+          const targetDir =
+            outputSettings.mode === 'custom_directory' && outputSettings.customPath
+              ? outputSettings.customPath
+              : `${firstDir}\\optimized`
+
+          const targetOut = `${targetDir}\\${customName}`
+
+          const result = await (window as any).electronAPI.imagesToPdf({
+            imagePaths,
+            outputPath: targetOut,
             quality: pdfSettings.quality,
             pageSize: pdfSettings.pageSize,
           })
 
-          if (pdfResult.success) {
-            batchCompletedCount += imageFiles.length
-            const savedBytes = Math.max(0, pdfResult.originalTotalSize - pdfResult.newSize)
-            batchSavedBytes += savedBytes
+          if (result.success) {
+            batchCompletedCount = files.length
+            batchSavedBytes = Math.max(0, result.originalTotalSize - result.newSize)
 
             setFiles((prev) =>
-              prev.map((f) => {
-                if (imageFiles.some((img) => img.id === f.id)) {
-                  return {
-                    ...f,
-                    status: 'completed',
-                    progress: 100,
-                    result: {
-                      outputPath: pdfResult.outputPath,
-                      newSize: pdfResult.newSize,
-                      savedBytes,
-                      savingsPercent: 0,
-                      durationMs: pdfResult.durationMs,
-                    },
-                  }
-                }
-                return f
-              })
+              prev.map((f) => ({
+                ...f,
+                status: 'completed',
+                progress: 100,
+                result: {
+                  outputPath: result.outputPath,
+                  newSize: result.newSize,
+                  savedBytes: Math.max(0, result.originalTotalSize - result.newSize),
+                  savingsPercent:
+                    result.originalTotalSize > 0
+                      ? Number((((result.originalTotalSize - result.newSize) / result.originalTotalSize) * 100).toFixed(1))
+                      : 0,
+                  durationMs: result.durationMs,
+                },
+              }))
             )
 
             newHistoryItems.push({
               id: `hist_${Date.now()}`,
-              name: `PDF Compilado (${pdfResult.pageCount} páginas)`,
-              originalSize: pdfResult.originalTotalSize,
-              newSize: pdfResult.newSize,
-              savingsPercent: 0,
-              outputPath: pdfResult.outputPath,
+              name: `Compilação de ${imagePaths.length} imagens ➔ PDF`,
+              originalSize: result.originalTotalSize,
+              newSize: result.newSize,
+              savingsPercent:
+                result.originalTotalSize > 0
+                  ? Number((((result.originalTotalSize - result.newSize) / result.originalTotalSize) * 100).toFixed(1))
+                  : 0,
+              outputPath: result.outputPath,
               type: 'pdf',
               timestamp: Date.now(),
             })
+          } else {
+            setFiles((prev) =>
+              prev.map((f) => ({ ...f, status: 'error', error: result.error || 'Falha ao compilar PDF' }))
+            )
+          }
+        } catch (err: any) {
+          setFiles((prev) =>
+            prev.map((f) => ({ ...f, status: 'error', error: err.message || 'Erro ao gerar PDF' }))
+          )
+        }
+      } else if (pdfSettings.mode === 'merge_split_pdf') {
+        const pdfItems = files.filter((f) => f.isPdf)
+
+        if (pdfSettings.splitRange && pdfSettings.splitRange.trim()) {
+          for (const item of pdfItems) {
+            setFiles((prev) =>
+              prev.map((f) => (f.id === item.id ? { ...f, status: 'processing', progress: 50 } : f))
+            )
+            try {
+              const splitRes = await (window as any).electronAPI.splitPdf({
+                pdfPath: item.path,
+                range: pdfSettings.splitRange.trim(),
+                outputPath: outputSettings.mode === 'custom_directory' && outputSettings.customPath ? outputSettings.customPath : undefined,
+              })
+
+              if (splitRes.success) {
+                batchCompletedCount += 1
+                setFiles((prev) =>
+                  prev.map((f) =>
+                    f.id === item.id
+                      ? {
+                          ...f,
+                          status: 'completed',
+                          progress: 100,
+                          result: {
+                            outputPath: splitRes.outputPath,
+                            newSize: splitRes.newSize,
+                            savedBytes: 0,
+                            savingsPercent: 0,
+                            durationMs: splitRes.durationMs,
+                          },
+                        }
+                      : f
+                  )
+                )
+
+                newHistoryItems.push({
+                  id: `hist_${Date.now()}_${item.id}`,
+                  name: `Divisão de PDF (${pdfSettings.splitRange}) ➔ ${item.name}`,
+                  originalSize: splitRes.originalTotalSize,
+                  newSize: splitRes.newSize,
+                  savingsPercent: 0,
+                  outputPath: splitRes.outputPath,
+                  type: 'pdf',
+                  timestamp: Date.now(),
+                })
+              } else {
+                setFiles((prev) =>
+                  prev.map((f) => (f.id === item.id ? { ...f, status: 'error', error: splitRes.error } : f))
+                )
+              }
+            } catch (err: any) {
+              setFiles((prev) =>
+                prev.map((f) => (f.id === item.id ? { ...f, status: 'error', error: err.message } : f))
+              )
+            }
+          }
+        } else if (pdfItems.length >= 2) {
+          setFiles((prev) => prev.map((f) => ({ ...f, status: 'processing', progress: 50 })))
+          try {
+            const firstDir = pdfItems[0].path.substring(0, pdfItems[0].path.lastIndexOf('\\'))
+            const customName = pdfSettings.customPdfName?.trim()
+              ? pdfSettings.customPdfName.endsWith('.pdf') ? pdfSettings.customPdfName : `${pdfSettings.customPdfName}.pdf`
+              : `pdf_mesclado_${Date.now()}.pdf`
+            const targetOut = outputSettings.mode === 'custom_directory' && outputSettings.customPath
+              ? `${outputSettings.customPath}\\${customName}`
+              : `${firstDir}\\optimized\\${customName}`
+
+            const mergeRes = await (window as any).electronAPI.mergePdfs({
+              pdfPaths: pdfItems.map((p) => p.path),
+              outputPath: targetOut,
+            })
+
+            if (mergeRes.success) {
+              batchCompletedCount = pdfItems.length
+              setFiles((prev) =>
+                prev.map((f) => ({
+                  ...f,
+                  status: 'completed',
+                  progress: 100,
+                  result: {
+                    outputPath: mergeRes.outputPath,
+                    newSize: mergeRes.newSize,
+                    savedBytes: 0,
+                    savingsPercent: 0,
+                    durationMs: mergeRes.durationMs,
+                  },
+                }))
+              )
+              newHistoryItems.push({
+                id: `hist_${Date.now()}`,
+                name: `Mesclagem de ${pdfItems.length} PDFs em documento único`,
+                originalSize: mergeRes.originalTotalSize,
+                newSize: mergeRes.newSize,
+                savingsPercent: 0,
+                outputPath: mergeRes.outputPath,
+                type: 'pdf',
+                timestamp: Date.now(),
+              })
+            } else {
+              setFiles((prev) => prev.map((f) => ({ ...f, status: 'error', error: mergeRes.error })))
+            }
+          } catch (err: any) {
+            setFiles((prev) => prev.map((f) => ({ ...f, status: 'error', error: err.message })))
           }
         }
       } else {
-        const pdfFiles = pending.filter((f) => f.isPdf || f.ext.toLowerCase() === '.pdf')
-        for (const item of pdfFiles) {
+        for (const item of pending) {
           setFiles((prev) =>
-            prev.map((f) => (f.id === item.id ? { ...f, status: 'processing', progress: 10 } : f))
+            prev.map((f) => (f.id === item.id ? { ...f, status: 'processing', progress: 5 } : f))
           )
 
           try {
@@ -438,14 +582,19 @@ export function App() {
             'MediaMorph',
             pdfSettings.mode === 'images_to_pdf'
               ? 'PDF gerado com sucesso!'
-              : 'Páginas do PDF extraídas com sucesso!'
+              : 'Operação de PDF concluída com sucesso!'
           )
         }
       }
       return
     }
 
+    let fileIndex = 1
     for (const item of pending) {
+      while (isPausedRef.current) {
+        await new Promise((r) => setTimeout(r, 200))
+      }
+
       setFiles((prev) =>
         prev.map((f) => (f.id === item.id ? { ...f, status: 'processing', progress: 0 } : f))
       )
@@ -455,7 +604,7 @@ export function App() {
           const targetFormat = (item.customSettings?.format || imageSettings.format) as any
           const targetQuality = item.customSettings?.quality || imageSettings.quality
           const ext = targetFormat === 'jpeg' ? 'jpg' : targetFormat
-          const customOut = buildCustomOutputPath(item.path, ext)
+          const customOut = buildCustomOutputPath(item.path, ext, fileIndex++)
 
           const result = await (window as any).electronAPI.processImage({
             inputPath: item.path,
@@ -468,6 +617,8 @@ export function App() {
             maxWidth: imageSettings.maxWidth,
             maxHeight: imageSettings.maxHeight,
             stripMetadata: imageSettings.stripMetadata,
+            watermark: imageSettings.watermark,
+            adjustments: imageSettings.adjustments,
           })
 
           setFiles((prev) =>
@@ -478,7 +629,7 @@ export function App() {
                   batchCompletedCount += 1
                   newHistoryItems.push({
                     id: `hist_${Date.now()}_${Math.random()}`,
-                    name: f.name,
+                    name: item.name,
                     originalSize: result.originalSize,
                     newSize: result.newSize,
                     savingsPercent: result.savingsPercent,
@@ -499,27 +650,32 @@ export function App() {
                     },
                   }
                 } else {
-                  return { ...f, status: 'error', error: result.error || 'Falha ao processar' }
+                  return { ...f, status: 'error', error: result.error || 'Falha ao processar imagem' }
                 }
               }
               return f
             })
           )
         } else if (item.isVideo) {
-          const targetFormat = (item.customSettings?.format || videoSettings.format) as any
-          const ext = targetFormat === 'mp3' ? 'mp3' : targetFormat
-          const customOut = buildCustomOutputPath(item.path, ext)
+          const isAudioExtract = videoSettings.format === 'mp3' || videoSettings.preset === 'extract_audio'
+          const ext = isAudioExtract ? (videoSettings.audioExtractFormat || 'mp3') : videoSettings.format
+          const customOut = buildCustomOutputPath(item.path, ext, fileIndex++)
 
           const result = await (window as any).electronAPI.processVideo({
             jobId: item.id,
             inputPath: item.path,
             outputPath: customOut,
-            format: targetFormat,
+            format: videoSettings.format,
             preset: videoSettings.preset,
             crf: videoSettings.crf,
             targetSizeMB: videoSettings.targetSizeMB,
             resolution: videoSettings.resolution,
             muteAudio: videoSettings.muteAudio,
+            fps: videoSettings.fps,
+            speed: videoSettings.speed,
+            gpu: videoSettings.gpu,
+            crop: videoSettings.crop,
+            audioExtractFormat: videoSettings.audioExtractFormat,
             trimStart: videoSettings.trimStart,
             trimEnd: videoSettings.trimEnd,
           })
@@ -532,7 +688,7 @@ export function App() {
                   batchCompletedCount += 1
                   newHistoryItems.push({
                     id: `hist_${Date.now()}_${Math.random()}`,
-                    name: f.name,
+                    name: item.name,
                     originalSize: result.originalSize,
                     newSize: result.newSize,
                     savingsPercent: result.savingsPercent,
@@ -561,7 +717,7 @@ export function App() {
           )
         } else if (item.isAudio) {
           const ext = audioSettings.format
-          const customOut = buildCustomOutputPath(item.path, ext)
+          const customOut = buildCustomOutputPath(item.path, ext, fileIndex++)
 
           const result = await (window as any).electronAPI.processAudio({
             jobId: item.id,
@@ -581,7 +737,7 @@ export function App() {
                   batchCompletedCount += 1
                   newHistoryItems.push({
                     id: `hist_${Date.now()}_${Math.random()}`,
-                    name: f.name,
+                    name: item.name,
                     originalSize: result.originalSize,
                     newSize: result.newSize,
                     savingsPercent: result.savingsPercent,
@@ -608,90 +764,17 @@ export function App() {
               return f
             })
           )
-        } else if (item.isPdf) {
-          const base64 = await (window as any).electronAPI.readFileBase64(item.path)
-          if (!base64) throw new Error('Não foi possível ler o arquivo PDF')
-
-          const pages = await extractPagesFromPdf(
-            base64,
-            pdfSettings.extractScale || 2,
-            (curr, tot) => {
-              setFiles((prev) =>
-                prev.map((f) =>
-                  f.id === item.id
-                    ? { ...f, progress: Math.min(85, Math.round((curr / tot) * 80)) }
-                    : f
-                )
-              )
-            }
-          )
-
-          const saveResult = await (window as any).electronAPI.savePdfPages({
-            pdfPath: item.path,
-            pages,
-            format: pdfSettings.extractFormat,
-            quality: pdfSettings.extractQuality,
-            outputPath:
-              outputSettings.mode === 'custom_directory' && outputSettings.customPath
-                ? outputSettings.customPath
-                : undefined,
-          })
-
-          if (saveResult.success) {
-            batchCompletedCount += 1
-            const savedBytes = Math.max(0, saveResult.totalOriginalSize - saveResult.totalNewSize)
-            batchSavedBytes += savedBytes
-
-            setFiles((prev) =>
-              prev.map((f) => {
-                if (f.id === item.id) {
-                  return {
-                    ...f,
-                    status: 'completed',
-                    progress: 100,
-                    result: {
-                      outputPath: saveResult.outputDir,
-                      newSize: saveResult.totalNewSize,
-                      savedBytes,
-                      savingsPercent: 0,
-                      durationMs: saveResult.durationMs,
-                    },
-                  }
-                }
-                return f
-              })
-            )
-
-            newHistoryItems.push({
-              id: `hist_${Date.now()}_${item.id}`,
-              name: `${item.name} ➔ ${saveResult.pageCount} imagens (.${pdfSettings.extractFormat})`,
-              originalSize: saveResult.totalOriginalSize,
-              newSize: saveResult.totalNewSize,
-              savingsPercent: 0,
-              outputPath: saveResult.outputDir,
-              type: 'pdf',
-              timestamp: Date.now(),
-            })
-          } else {
-            setFiles((prev) =>
-              prev.map((f) =>
-                f.id === item.id
-                  ? { ...f, status: 'error', error: saveResult.error || 'Falha ao salvar imagens' }
-                  : f
-              )
-            )
-          }
         }
       } catch (err: any) {
         setFiles((prev) =>
-          prev.map((f) =>
-            f.id === item.id ? { ...f, status: 'error', error: err.message || 'Erro' } : f
-          )
+          prev.map((f) => (f.id === item.id ? { ...f, status: 'error', error: err.message || 'Erro inesperado' } : f))
         )
       }
     }
 
     setIsProcessing(false)
+    setIsPaused(false)
+    isPausedRef.current = false
 
     if (batchCompletedCount > 0) {
       playSuccessSound()
@@ -700,28 +783,46 @@ export function App() {
       if ((window as any).electronAPI?.notify) {
         ;(window as any).electronAPI.notify(
           'MediaMorph',
-          `Processamento concluído para ${batchCompletedCount} item(ns)!`
+          `Conversão de ${batchCompletedCount} arquivo(s) concluída com sucesso!`
         )
       }
     }
   }
 
   const filteredFiles = files.filter((f) => {
-    if (activeTab === 'images') return f.isImage || f.isPdf
+    if (activeTab === 'images') return f.isImage
     if (activeTab === 'videos') return f.isVideo
     if (activeTab === 'audio') return f.isAudio
-    if (activeTab === 'pdf') return f.isImage || f.isPdf
+    if (activeTab === 'pdf') {
+      if (pdfSettings.mode === 'images_to_pdf') return f.isImage
+      return f.isPdf
+    }
     return true
   })
 
+  const handleApplyPreset = (presetSettings: any) => {
+    if (activeTab === 'images') setImageSettings(presetSettings)
+    else if (activeTab === 'videos') setVideoSettings(presetSettings)
+    else if (activeTab === 'audio') setAudioSettings(presetSettings)
+    else if (activeTab === 'pdf') setPdfSettings(presetSettings)
+  }
+
+  const getCurrentTabSettings = () => {
+    if (activeTab === 'images') return imageSettings
+    if (activeTab === 'videos') return videoSettings
+    if (activeTab === 'audio') return audioSettings
+    return pdfSettings
+  }
+
   return (
-    <div className="min-h-screen bg-background text-gray-900 dark:text-gray-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-white transition-colors">
+    <div className="min-h-screen bg-background text-gray-900 dark:text-gray-100 flex flex-col font-sans transition-colors">
       <Header
         activeTab={activeTab}
         onTabChange={setActiveTab}
         totalCount={filteredFiles.length}
         historyCount={history.length}
         onOpenHistory={() => setIsHistoryOpen(true)}
+        onOpenPresets={() => setIsPresetsOpen(true)}
         theme={theme}
         onToggleTheme={handleToggleTheme}
       />
@@ -797,6 +898,8 @@ export function App() {
                   activeTab={activeTab}
                   pdfMode={pdfSettings.mode}
                   isProcessing={isProcessing}
+                  isPaused={isPaused}
+                  onTogglePause={handleTogglePause}
                   onStartProcess={handleStartProcess}
                   onClearCompleted={handleClearCompleted}
                   onClearAll={handleClearAll}
@@ -822,7 +925,12 @@ export function App() {
         <FileSettingsModal
           file={settingsModalFile}
           onClose={() => setSettingsModalFile(null)}
-          onSave={handleSaveIndividualSettings}
+          onSave={(id: string, customSettings?: { format?: string; quality?: number }) => {
+            setFiles((prev) =>
+              prev.map((f) => (f.id === id ? { ...f, customSettings } : f))
+            )
+            setSettingsModalFile(null)
+          }}
         />
       )}
 
@@ -833,7 +941,14 @@ export function App() {
           initialTrimStart={videoSettings.trimStart}
           initialTrimEnd={videoSettings.trimEnd}
           onClose={() => setTrimmingFile(null)}
-          onSave={handleSaveTrim}
+          onSave={(start?: string, end?: string) => {
+            setVideoSettings((prev) => ({
+              ...prev,
+              trimStart: start,
+              trimEnd: end,
+            }))
+            setTrimmingFile(null)
+          }}
         />
       )}
 
@@ -841,7 +956,20 @@ export function App() {
         isOpen={isHistoryOpen}
         onClose={() => setIsHistoryOpen(false)}
         history={history}
-        onClearHistory={handleClearHistory}
+        onClearHistory={() => {
+          setHistory([])
+          try {
+            localStorage.removeItem(HISTORY_STORAGE_KEY)
+          } catch {}
+        }}
+      />
+
+      <PresetsModal
+        isOpen={isPresetsOpen}
+        onClose={() => setIsPresetsOpen(false)}
+        activeTab={activeTab}
+        currentSettings={getCurrentTabSettings()}
+        onApplyPreset={handleApplyPreset}
       />
     </div>
   )

@@ -39,6 +39,17 @@ export interface SavePdfPagesResult {
   error?: string
 }
 
+export interface MergePdfsOptions {
+  pdfPaths: string[]
+  outputPath?: string
+}
+
+export interface SplitPdfOptions {
+  pdfPath: string
+  range: string
+  outputPath?: string
+}
+
 export async function convertImagesToPdf(options: ImagesToPdfOptions): Promise<PdfProcessResult> {
   const startTime = Date.now()
 
@@ -205,6 +216,140 @@ export async function savePdfPagesToImages(options: SavePdfPagesOptions): Promis
       totalNewSize: 0,
       durationMs: Date.now() - startTime,
       error: err.message || 'Falha ao salvar páginas do PDF como imagem',
+    }
+  }
+}
+
+export async function mergePdfs(options: MergePdfsOptions): Promise<PdfProcessResult> {
+  const startTime = Date.now()
+
+  try {
+    if (!options.pdfPaths || options.pdfPaths.length < 2) {
+      throw new Error('Selecione pelo menos 2 arquivos PDF para mesclar')
+    }
+
+    let originalTotalSize = 0
+    for (const p of options.pdfPaths) {
+      const st = await fs.stat(p)
+      originalTotalSize += st.size
+    }
+
+    let outputPath = options.outputPath
+    if (!outputPath) {
+      const firstDir = path.dirname(options.pdfPaths[0])
+      outputPath = path.join(firstDir, 'optimized', `pdf_mesclado_${Date.now()}.pdf`)
+    }
+    await fs.mkdir(path.dirname(outputPath), { recursive: true })
+
+    const mergedPdf = await PDFDocument.create()
+
+    for (const pdfPath of options.pdfPaths) {
+      const pdfBytes = await fs.readFile(pdfPath)
+      const pdfDoc = await PDFDocument.load(pdfBytes)
+      const copiedPages = await mergedPdf.copyPages(pdfDoc, pdfDoc.getPageIndices())
+      copiedPages.forEach((page) => mergedPdf.addPage(page))
+    }
+
+    const finalBytes = await mergedPdf.save()
+    await fs.writeFile(outputPath, finalBytes)
+    const outStat = await fs.stat(outputPath)
+
+    return {
+      success: true,
+      outputPath,
+      originalTotalSize,
+      newSize: outStat.size,
+      pageCount: mergedPdf.getPageCount(),
+      durationMs: Date.now() - startTime,
+    }
+  } catch (err: any) {
+    return {
+      success: false,
+      outputPath: options.outputPath || '',
+      originalTotalSize: 0,
+      newSize: 0,
+      pageCount: 0,
+      durationMs: Date.now() - startTime,
+      error: err.message || 'Falha ao mesclar PDFs',
+    }
+  }
+}
+
+function parsePageRanges(rangeStr: string, totalPages: number): number[] {
+  const indices = new Set<number>()
+  const parts = rangeStr.split(',').map((s) => s.trim()).filter(Boolean)
+
+  for (const part of parts) {
+    if (part.includes('-')) {
+      const [startStr, endStr] = part.split('-').map((s) => s.trim())
+      const start = parseInt(startStr, 10)
+      const end = parseInt(endStr, 10)
+      if (!isNaN(start) && !isNaN(end)) {
+        const min = Math.max(1, Math.min(start, end))
+        const max = Math.min(totalPages, Math.max(start, end))
+        for (let i = min; i <= max; i++) {
+          indices.add(i - 1)
+        }
+      }
+    } else {
+      const pageNum = parseInt(part, 10)
+      if (!isNaN(pageNum) && pageNum >= 1 && pageNum <= totalPages) {
+        indices.add(pageNum - 1)
+      }
+    }
+  }
+
+  return Array.from(indices).sort((a, b) => a - b)
+}
+
+export async function splitPdf(options: SplitPdfOptions): Promise<PdfProcessResult> {
+  const startTime = Date.now()
+
+  try {
+    const stat = await fs.stat(options.pdfPath)
+    const originalTotalSize = stat.size
+
+    const pdfBytes = await fs.readFile(options.pdfPath)
+    const srcDoc = await PDFDocument.load(pdfBytes)
+    const totalPages = srcDoc.getPageCount()
+
+    const targetIndices = parsePageRanges(options.range, totalPages)
+    if (targetIndices.length === 0) {
+      throw new Error(`Intervalo de páginas inválido (${options.range}). O documento possui ${totalPages} páginas.`)
+    }
+
+    let outputPath = options.outputPath
+    if (!outputPath) {
+      const parsed = path.parse(options.pdfPath)
+      outputPath = path.join(parsed.dir, 'optimized', `${parsed.name}_paginas_extraidas.pdf`)
+    }
+    await fs.mkdir(path.dirname(outputPath), { recursive: true })
+
+    const splitDoc = await PDFDocument.create()
+    const copiedPages = await splitDoc.copyPages(srcDoc, targetIndices)
+    copiedPages.forEach((page) => splitDoc.addPage(page))
+
+    const finalBytes = await splitDoc.save()
+    await fs.writeFile(outputPath, finalBytes)
+    const outStat = await fs.stat(outputPath)
+
+    return {
+      success: true,
+      outputPath,
+      originalTotalSize,
+      newSize: outStat.size,
+      pageCount: splitDoc.getPageCount(),
+      durationMs: Date.now() - startTime,
+    }
+  } catch (err: any) {
+    return {
+      success: false,
+      outputPath: options.outputPath || '',
+      originalTotalSize: 0,
+      newSize: 0,
+      pageCount: 0,
+      durationMs: Date.now() - startTime,
+      error: err.message || 'Falha ao dividir PDF',
     }
   }
 }

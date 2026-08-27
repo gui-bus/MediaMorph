@@ -13,7 +13,7 @@
 
 ## 🌟 Overview
 
-**MediaMorph** is a high-performance, open-source desktop application designed for **batch conversion, compression, video trimming, and manipulation of images, videos, audios, and PDF documents**. Built with **Electron 33**, **React 18**, **TypeScript**, **Tailwind CSS**, **Sharp**, and **FFmpeg**, MediaMorph provides 100% offline, local, and secure multimedia processing with native hardware acceleration.
+**MediaMorph** is a high-performance, open-source desktop application designed for **batch conversion, compression, video trimming, watermarking, and manipulation of images, videos, audios, and PDF documents**. Built with **Electron 33**, **React 18**, **TypeScript**, **Tailwind CSS**, **Sharp**, and **FFmpeg**, MediaMorph provides 100% offline, local, and secure multimedia processing with native hardware acceleration (GPU).
 
 Engineered for creators, developers, designers, and power users, MediaMorph combines an industrial-grade media engine with a clean, responsive interface featuring light/dark themes and a built-in file explorer.
 
@@ -34,36 +34,37 @@ Below is the complete catalogue of all capabilities, features, and media operati
 
 ### 🖼️ 1. Images & Icons
 - **Multi-Format Conversion & Compression:** Convert between **PNG, JPG/JPEG, WebP, AVIF, GIF, TIFF, BMP, SVG, and ICO**.
-- **Lossy & Lossless Modes:** Slider for visual quality adjustment (1% to 100%) or mathematical lossless compression.
-- **Native Windows Icon Generator (`.ico`):** Turn any image into a multi-resolution `.ico` icon file (256x256, 128x128, 64x64, 48x48, 32x32, 16x16) for executables and desktop shortcuts.
-- **Scale & Resolution Resizing:**
-  - Percentage-based scaling (*25%, 50%, 75%, 100%, 150%, 200%*).
-  - Custom width and height inputs with aspect ratio lock.
-- **Social Media & Web Presets:**
-  - *Instagram Story / Reels (1080x1920 - 9:16)*
-  - *Instagram Post / Feed (1080x1080 - 1:1)*
-  - *Instagram Portrait (1080x1350 - 4:5)*
-  - *YouTube Thumbnail (1280x720 - 16:9)*
-  - *Twitter/X Header Banner (1500x500 - 3:1)*
-  - *Twitter/X Post Image (1200x675 - 16:9)*
-  - *Web Favicon (32x32)*
-  - *Full HD (1920x1080) and 4K Ultra HD (3840x2160)*
-- **EXIF Metadata Stripping:** Remove sensitive camera details, timestamp, and GPS locations for privacy.
+- **Batch Watermarking:**
+  - Custom **Text** or transparent **PNG Logo** overlays.
+  - Controls for opacity (10% to 100%), font size, color, and positioning (*Center, Corners*).
+- **Color Adjustments & Filters:**
+  - Real-time sliders for **Brightness**, **Contrast**, **Saturation**, and **Sharpen**.
+  - Quick 90°/180°/270° rotation and horizontal/vertical flipping.
+- **Advanced Vector Rasterization (SVG):** Render SVGs with high-density scaling multipliers (1x, 2x, 4x, 8x).
+- **Lossy & Lossless Modes:** Quality slider (1% to 100%) or mathematical lossless compression.
+- **Native Windows Icon Generator (`.ico`):** Multi-resolution `.ico` icon creation for executables and desktop shortcuts.
+- **Scale & Resolution Resizing:** Free scaling or social media presets (*Story 9:16, Feed 1:1, YouTube Thumbnail 16:9, Twitter Banner 3:1, Favicon 32x32*).
+- **EXIF Metadata Stripping:** Remove camera details, timestamp, and GPS locations for privacy.
 - **Interactive Before & After Split Slider:** Side-by-side comparison modal with live zoom and real-time disk space savings.
 
 ---
 
 ### 🎬 2. Videos & Animations
 - **High-Efficiency Video Encoding:** Convert videos between **MP4 (H.264), WebM (VP9), MKV, AVI, MOV, FLV, WMV, M4V, and 3GP**.
+- **GPU Hardware Acceleration:** Hardware encoding powered by **NVIDIA NVENC**, **Intel QuickSync**, and **AMD AMF**.
+- **FPS & Speed / Timelapse Controls:**
+  - Framerate options: *Keep Original, 60 FPS, 30 FPS, 24 FPS*.
+  - Speed multiplier: *0.5x (slow motion), 1.0x (normal), 1.5x, 2.0x, 4.0x (timelapse)* with automatic audio pitch sync.
+- **Aspect Ratio Cropping:** Automatic framing for *9:16 Vertical (Reels/Shorts/TikTok), 1:1 Square, 16:9 Widescreen, and 4:5 Portrait*.
 - **Animated GIF Creation:** Convert any video clip into a smooth, lightweight animated GIF.
-- **Direct Audio Extraction:** Extract high-fidelity audio tracks directly from videos to **MP3**.
+- **Multi-Format Audio Extraction:** Extract high-fidelity audio directly from videos into **MP3, WAV, FLAC, AAC, or OGG**.
 - **Smart Target File Size Presets:**
   - *Discord Free Uploads (25 MB / 8 MB limits)*
   - *WhatsApp Attachments (16 MB limit)*
   - *Email & Quick Sharing (50 MB limit)*
-- **CRF (Constant Rate Factor) Controls:** Fine-tune video compression from CRF 18 (studio quality) to CRF 35 (extreme file shrinkage).
+- **CRF (Constant Rate Factor) Controls:** Fine-tune video compression from CRF 18 to CRF 35.
 - **Video Downscaling:** Smart presets for *4K (2160p), Full HD (1080p), HD (720p), SD (480p), and 360p*.
-- **Visual Video Trimmer:** Timeline scrubber with precise start/end handles, live video preview, and continuous loop playback strictly on the trimmed section.
+- **Visual Video Trimmer:** Timeline scrubber with precise start/end handles, live video preview, and continuous loop playback.
 - **One-Click Audio Stripping:** Export muted videos for social media feeds or presentation loops.
 - **Instant Video Thumbnails:** Automatic frame preview extraction displayed in the file explorer and queue list.
 
@@ -71,7 +72,8 @@ Below is the complete catalogue of all capabilities, features, and media operati
 
 ### 🎵 3. Audio & Music
 - **Audio Conversion:** Full support for **MP3, WAV, FLAC, AAC, OGG, M4A, WMA, and AIFF**.
-- **Bitrate Customization:** Choose between *128 kbps (lightweight), 192 kbps (balanced), 256 kbps (high quality), and 320 kbps (studio master)*.
+- **Inline Mini Audio Player:** Play and preview audio files directly on queue cards and inside the file explorer before converting.
+- **Bitrate Customization:** Choose between *128 kbps, 192 kbps, 256 kbps, and 320 kbps*.
 - **Channel Mixing:** Toggle between **Stereo** and **Mono** output.
 - **Dynamic Volume Normalization:** Normalize loud or quiet audio tracks automatically.
 
@@ -79,22 +81,20 @@ Below is the complete catalogue of all capabilities, features, and media operati
 
 ### 📄 4. PDF Documents
 - **Images ➔ Single PDF:** Merge and compile multiple photos/images into a single PDF document with custom page order and quality compression.
-- **PDF ➔ Page Extraction to Images:** Load any PDF document and extract each page as a standalone image in **WebP, PNG, JPEG, AVIF, or TIFF**.
-- **DPI Resolution Scaling for PDF Extraction:**
-  - `1.0x (~150 DPI)` - Fast screen reading and quick preview.
-  - `2.0x (~300 DPI)` - Print-grade crispness and sharp OCR text clarity.
-  - `3.0x (~450 DPI)` - Ultra-high definition for technical drawings, architectural plans, and fine details.
+- **PDF ➔ Page Extraction to Images:** Load any PDF document and extract each page as a standalone image in **WebP, PNG, JPEG, AVIF, or TIFF** (150 to 450 DPI).
+- **Merge Multiple PDFs:** Combine multiple PDF documents into a single continuous file.
+- **Split & Extract PDF Pages:** Extract page ranges (e.g. `1-5`, `3, 7-10`) into new standalone PDF documents.
 
 ---
 
-### 📂 5. File Explorer, Queue & Productivity
-- **Integrated File Explorer:** Browse local directories within the app with shortcuts to *Downloads, Desktop, Pictures, Videos, Documents, and Local Disk (C:)*.
-- **Whole-Folder Import:** Select any directory to recursively discover and import all supported media files into the queue in one click.
-- **Drag & Drop Workflow:** Drop individual files or whole directories onto the app interface.
-- **Batch Processing with Progress Feedback:** Real-time progress bars and conversion speed metrics.
-- **Global & Per-File Custom Settings:** Apply batch rules or customize settings for individual queue items.
+### 📂 5. File Explorer, Productivity & Presets
+- **Smart Batch Renaming:** Configure dynamic output naming templates using tags like `{name}`, `{date}`, `{counter}`, and `{ext}`.
+- **User Presets Manager:** Save and load your favorite configuration setups with 1 click.
+- **Queue Pause & Resume:** Pause heavy batch conversion tasks and resume anytime without losing progress.
+- **Integrated File Explorer:** Browse local directories with shortcuts to *Downloads, Desktop, Pictures, Videos, Documents, and Local Disk (C:)*.
+- **Whole-Folder Import:** Select any directory to recursively discover and import all supported media files into the queue.
 - **Lifetime Savings Analytics:** Visual dashboard tracking total files processed, hours saved, and gigabytes reclaimed.
-- **100% Offline & Private:** Zero server uploads or cloud dependencies. Everything runs locally on your PC.
+- **100% Offline & Private:** Zero cloud dependencies. Everything runs locally on your PC.
 
 ---
 
@@ -129,8 +129,10 @@ graph TB
         UI["🖥️ Main Dashboard & App UI"]
         Explorer["📂 Integrated File Explorer with Thumbnails"]
         Trimmer["✂️ Visual Video Trimmer with Loop"]
+        AudioPlayer["🎵 Inline Mini Audio Player"]
         Dropzone["📥 Drag & Drop File & Folder Zone"]
-        Settings["⚙️ Global & Per-File Settings"]
+        Settings["⚙️ Global Settings, Watermark & Filters"]
+        Presets["⭐ User Presets Manager"]
         Comparator["🖼️ Before vs After Split Slider"]
     end
 
@@ -140,22 +142,24 @@ graph TB
 
     subgraph Backend ["⚙️ Main Process (Node.js & Electron Main)"]
         Main["🧠 Electron Main Process"]
-        ImgService["🖼️ imageService (Sharp & ICO Generator)"]
-        VidService["🎬 videoService (FFmpeg & FFprobe)"]
+        ImgService["🖼️ imageService (Sharp, Watermark & Filters)"]
+        VidService["🎬 videoService (FFmpeg, GPU NVENC & Audio Extractor)"]
         AudService["🎵 audioService (FFmpeg Audio Core)"]
         PdfService["📄 pdfService (PDF-Lib & PDF.js Engine)"]
     end
 
     subgraph Native ["💻 Operating System & Hardware"]
         FS["📁 Local File System (Windows)"]
-        HW["⚡ Hardware Acceleration & Media Streaming"]
+        HW["⚡ GPU Hardware Acceleration (NVENC/QSV/AMF)"]
     end
 
     UI --> Bridge
     Explorer --> Bridge
     Trimmer --> Bridge
+    AudioPlayer --> Bridge
     Dropzone --> Bridge
     Settings --> Bridge
+    Presets --> Bridge
     Comparator --> Bridge
 
     Bridge --> Main
@@ -169,6 +173,7 @@ graph TB
     AudService --> FS
     PdfService --> FS
 
+    VidService -.->|GPU Acceleration| HW
     Trimmer -.->|Local file:/// Stream| HW
 ```
 
@@ -178,10 +183,10 @@ graph TB
 
 | Media Type | Input Formats | Output Formats | Capabilities |
 | :--- | :--- | :--- | :--- |
-| **Images** | PNG, JPG, JPEG, WebP, AVIF, TIFF, GIF, SVG, BMP, ICO | WebP, AVIF, JPEG, PNG, GIF, TIFF, ICO | Free scale/social presets, EXIF removal, lossless mode, multi-layer `.ico` generator. |
-| **Videos** | MP4, MKV, MOV, AVI, WebM, FLV, WMV, M4V, 3GP | MP4 (H.264), WebM (VP9), MKV, GIF, MP3 | CRF compression, target size limits (Discord/WhatsApp), downscaling to 1080p/720p/480p, visual trimmer, audio muting. |
-| **Audio** | MP3, WAV, FLAC, AAC, OGG, M4A, WMA, AIFF | MP3, WAV, FLAC, AAC, OGG | Custom bitrate (128k - 320k), stereo/mono mixing, volume normalization. |
-| **PDF Documents** | PNG, JPG, JPEG, WebP, AVIF, TIFF, PDF | PDF (.pdf), WebP, PNG, JPEG, AVIF, TIFF | Multi-photo merging into single PDF, page extraction into high-res images (150 - 450 DPI). |
+| **Images** | PNG, JPG, JPEG, WebP, AVIF, TIFF, GIF, SVG, BMP, ICO | WebP, AVIF, JPEG, PNG, GIF, TIFF, ICO | Watermark (text/logo), color filters (brightness/contrast/saturation/sharpen), rotate/flip, SVG density, presets, EXIF removal, multi-layer `.ico`. |
+| **Videos** | MP4, MKV, MOV, AVI, WebM, FLV, WMV, M4V, 3GP | MP4, WebM, MKV, GIF, MP3, WAV, FLAC, AAC, OGG | GPU acceleration (NVENC/QSV/AMF), FPS (24/30/60), speed multiplier (0.5x-4x), crop (9:16, 1:1, 16:9), visual trimmer, target size limit. |
+| **Audio** | MP3, WAV, FLAC, AAC, OGG, M4A, WMA, AIFF | MP3, WAV, FLAC, AAC, OGG | Inline mini audio player, custom bitrate (128k - 320k), stereo/mono mixing, volume normalization. |
+| **PDF Documents** | PNG, JPG, JPEG, WebP, AVIF, TIFF, PDF | PDF (.pdf), WebP, PNG, JPEG, AVIF, TIFF | Multi-photo compiling, page extraction into high-res images (150 - 450 DPI), multi-PDF merging, page range splitting. |
 
 ---
 

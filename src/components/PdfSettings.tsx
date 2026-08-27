@@ -1,6 +1,6 @@
 import React from 'react'
-import { PdfGlobalSettings, PdfExtractFormat } from '../types'
-import { Sliders, FileText, FileStack, Image as ImageIcon, Sparkles } from 'lucide-react'
+import { PdfGlobalSettings, PdfExtractFormat, PdfMode } from '../types'
+import { Sliders, FileText, FileStack, Image as ImageIcon, Combine, Scissors } from 'lucide-react'
 import { SearchableSelect, SelectOption } from './SearchableSelect'
 
 interface PdfSettingsProps {
@@ -87,14 +87,14 @@ export const PdfSettings: React.FC<PdfSettingsProps> = ({ settings, onChange, di
           </h2>
         </div>
 
-        <div className="flex items-center gap-1.5 bg-background p-1 rounded-xl border border-border">
+        <div className="flex flex-wrap items-center gap-1.5 bg-background p-1 rounded-xl border border-border">
           <button
             type="button"
             disabled={disabled}
             onClick={() => onChange({ ...settings, mode: 'images_to_pdf' })}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
               settings.mode === 'images_to_pdf'
-                ? 'bg-emerald-500 text-white shadow-sm'
+                ? 'bg-emerald-500 text-white shadow-sm font-semibold'
                 : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-surface'
             }`}
           >
@@ -108,17 +108,31 @@ export const PdfSettings: React.FC<PdfSettingsProps> = ({ settings, onChange, di
             onClick={() => onChange({ ...settings, mode: 'pdf_to_images' })}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
               settings.mode === 'pdf_to_images'
-                ? 'bg-emerald-500 text-white shadow-sm'
+                ? 'bg-emerald-500 text-white shadow-sm font-semibold'
                 : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-surface'
             }`}
           >
             <ImageIcon className="h-3.5 w-3.5" />
             PDF ➔ Extrair Imagens
           </button>
+
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={() => onChange({ ...settings, mode: 'merge_split_pdf' })}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              settings.mode === 'merge_split_pdf'
+                ? 'bg-emerald-500 text-white shadow-sm font-semibold'
+                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-surface'
+            }`}
+          >
+            <Combine className="h-3.5 w-3.5" />
+            Mesclar / Dividir PDFs
+          </button>
         </div>
       </div>
 
-      {settings.mode === 'images_to_pdf' ? (
+      {settings.mode === 'images_to_pdf' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           <div className="space-y-2">
             <SearchableSelect
@@ -173,7 +187,9 @@ export const PdfSettings: React.FC<PdfSettingsProps> = ({ settings, onChange, di
             />
           </div>
         </div>
-      ) : (
+      )}
+
+      {settings.mode === 'pdf_to_images' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           <div className="space-y-2">
             <SearchableSelect
@@ -222,6 +238,60 @@ export const PdfSettings: React.FC<PdfSettingsProps> = ({ settings, onChange, di
                 .{settings.extractFormat}
               </strong>
             </p>
+          </div>
+        </div>
+      )}
+
+      {settings.mode === 'merge_split_pdf' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="p-4 rounded-xl bg-background/80 border border-border/80 space-y-3">
+            <div className="flex items-center gap-2">
+              <Combine className="h-4 w-4 text-emerald-500" />
+              <h3 className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider">
+                Mesclar PDFs em Lote
+              </h3>
+            </div>
+            <p className="text-xs text-gray-600 dark:text-gray-300">
+              Adicione 2 ou mais arquivos PDF na fila para unificá-los em um único documento contínuo na ordem da lista.
+            </p>
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-medium text-gray-700 dark:text-gray-300">
+                Nome do PDF Mesclado (Opcional)
+              </label>
+              <input
+                type="text"
+                placeholder="Ex: pdf_unificado.pdf"
+                disabled={disabled}
+                value={settings.customPdfName || ''}
+                onChange={(e) => onChange({ ...settings, customPdfName: e.target.value })}
+                className="w-full bg-surface border border-border rounded-lg px-2.5 py-1.5 text-xs text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+              />
+            </div>
+          </div>
+
+          <div className="p-4 rounded-xl bg-background/80 border border-border/80 space-y-3">
+            <div className="flex items-center gap-2">
+              <Scissors className="h-4 w-4 text-emerald-500" />
+              <h3 className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider">
+                Dividir / Extrair Intervalo de Páginas
+              </h3>
+            </div>
+            <p className="text-xs text-gray-600 dark:text-gray-300">
+              Especifique quais páginas deseja extrair do PDF (deixe em branco se desejar mesclar múltiplos arquivos).
+            </p>
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-medium text-gray-700 dark:text-gray-300">
+                Intervalo de Páginas (Ex: 1-5, 8, 11-14)
+              </label>
+              <input
+                type="text"
+                placeholder="Ex: 1-3, 5, 8-10"
+                disabled={disabled}
+                value={settings.splitRange || ''}
+                onChange={(e) => onChange({ ...settings, splitRange: e.target.value })}
+                className="w-full bg-surface border border-border rounded-lg px-2.5 py-1.5 text-xs text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+              />
+            </div>
           </div>
         </div>
       )}

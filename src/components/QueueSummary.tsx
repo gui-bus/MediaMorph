@@ -1,7 +1,7 @@
 import React from 'react'
 import { FileItem, MediaTab, PdfMode } from '../types'
 import { formatBytes } from '../lib/utils'
-import { Play, Loader2, Flame } from 'lucide-react'
+import { Play, Pause, Loader2, Flame } from 'lucide-react'
 import { CheckmarkSvg, RemoveImageSvg } from './CustomIcons'
 
 interface QueueSummaryProps {
@@ -9,6 +9,8 @@ interface QueueSummaryProps {
   activeTab: MediaTab
   pdfMode?: PdfMode
   isProcessing: boolean
+  isPaused?: boolean
+  onTogglePause?: () => void
   onStartProcess: () => void
   onClearCompleted: () => void
   onClearAll: () => void
@@ -19,6 +21,8 @@ export const QueueSummary: React.FC<QueueSummaryProps> = ({
   activeTab,
   pdfMode,
   isProcessing,
+  isPaused,
+  onTogglePause,
   onStartProcess,
   onClearCompleted,
   onClearAll,
@@ -61,7 +65,7 @@ export const QueueSummary: React.FC<QueueSummaryProps> = ({
             type="button"
             onClick={onClearCompleted}
             disabled={isProcessing}
-            className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-xs text-gray-700 dark:text-gray-300 bg-background hover:bg-border/60 active:bg-border transition-all border border-border disabled:opacity-50 disabled:pointer-events-none"
+            className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-xs text-gray-700 dark:text-gray-300 bg-background hover:bg-border/60 active:bg-border transition-all border border-border disabled:opacity-50 disabled:pointer-events-none"
           >
             <CheckmarkSvg className="h-4 w-4 text-emerald-500" />
             <span>Limpar Concluídos</span>
@@ -72,22 +76,37 @@ export const QueueSummary: React.FC<QueueSummaryProps> = ({
           type="button"
           onClick={onClearAll}
           disabled={isProcessing}
-          className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-xs text-rose-600 dark:text-rose-400 bg-background hover:bg-rose-500/10 active:bg-rose-500/20 transition-all border border-border disabled:opacity-50 disabled:pointer-events-none"
+          className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-xs text-rose-600 dark:text-rose-400 bg-background hover:bg-rose-500/10 active:bg-rose-500/20 transition-all border border-border disabled:opacity-50 disabled:pointer-events-none"
         >
           <RemoveImageSvg className="h-4 w-4 text-rose-500" />
           <span>Limpar Tudo</span>
         </button>
 
+        {isProcessing && onTogglePause && (
+          <button
+            type="button"
+            onClick={onTogglePause}
+            className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-xs transition-all border ${
+              isPaused
+                ? 'bg-amber-500 text-black border-amber-600 hover:bg-amber-400'
+                : 'bg-background border-border text-amber-500 hover:bg-amber-500/10'
+            }`}
+          >
+            {isPaused ? <Play className="h-3.5 w-3.5 fill-current" /> : <Pause className="h-3.5 w-3.5" />}
+            <span>{isPaused ? 'Retomar Fila' : 'Pausar Fila'}</span>
+          </button>
+        )}
+
         <button
           type="button"
           onClick={onStartProcess}
           disabled={isProcessing || pendingFiles.length === 0}
-          className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-xs text-white bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 transition-all transform active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
+          className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-xs text-white bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 transition-all transform active:scale-95 disabled:opacity-50 disabled:pointer-events-none shadow-sm"
         >
           {isProcessing ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              <span>Processando Fila...</span>
+              <span>{isPaused ? 'Fila Pausada' : 'Processando Fila...'}</span>
             </>
           ) : (
             <>
@@ -95,7 +114,9 @@ export const QueueSummary: React.FC<QueueSummaryProps> = ({
               <span>
                 {isPdf
                   ? pdfMode === 'pdf_to_images'
-                    ? `Extrair Imagens de ${pendingFiles.length} PDF(s)`
+                    ? `Extrair Imagens (${pendingFiles.length} PDFs)`
+                    : pdfMode === 'merge_split_pdf'
+                    ? `Processar (${pendingFiles.length} PDFs)`
                     : `Gerar PDF com ${pendingFiles.length} imagens`
                   : `Converter ${pendingFiles.length > 0 ? `(${pendingFiles.length})` : 'Todos'}`}
               </span>

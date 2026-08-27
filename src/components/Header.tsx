@@ -1,8 +1,7 @@
 import React from 'react'
 import {
-  Music,
-  FileText,
   History,
+  Bookmark,
 } from 'lucide-react'
 import { MediaTab, ThemeMode } from '../types'
 import { Logo } from './Logo'
@@ -14,6 +13,7 @@ interface HeaderProps {
   totalCount: number
   historyCount: number
   onOpenHistory: () => void
+  onOpenPresets: () => void
   theme: ThemeMode
   onToggleTheme: () => void
 }
@@ -24,6 +24,7 @@ export const Header: React.FC<HeaderProps> = ({
   totalCount,
   historyCount,
   onOpenHistory,
+  onOpenPresets,
   theme,
   onToggleTheme,
 }) => {
@@ -40,7 +41,6 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="flex flex-col md:flex-row items-center justify-between gap-4 px-6 py-3 bg-surface/90 backdrop-blur-xl border-b border-border sticky top-0 z-30 transition-colors shadow-sm">
-
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2.5">
           <Logo className="h-7 w-auto" isDark={isDark} />
@@ -85,6 +85,14 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       <div className="flex items-center gap-2">
+        <button
+          onClick={onOpenPresets}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface border border-border text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 text-xs font-medium transition-all shadow-sm"
+          title="Salvar e carregar predefinições personalizadas"
+        >
+          <Bookmark className="h-3.5 w-3.5 text-emerald-500 dark:text-emerald-400" />
+          <span className="hidden sm:inline">Presets</span>
+        </button>
 
         <button
           onClick={onOpenHistory}

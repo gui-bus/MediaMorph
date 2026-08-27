@@ -3,6 +3,7 @@ import fs from 'node:fs/promises'
 import ffmpeg from 'fluent-ffmpeg'
 import ffmpegInstaller from '@ffmpeg-installer/ffmpeg'
 import ffprobeInstaller from '@ffprobe-installer/ffprobe'
+import { GpuAcceleration, VideoCrop, AudioExtractFormat } from '../../src/types'
 
 function getBinaryPath(installerPath: string): string {
   let resolved = installerPath
@@ -29,6 +30,10 @@ export interface VideoProcessOptions {
   resolution?: 'original' | '1080p' | '720p' | '480p' | '360p'
   muteAudio?: boolean
   fps?: number
+  speed?: number
+  gpu?: GpuAcceleration
+  crop?: VideoCrop
+  audioExtractFormat?: AudioExtractFormat
   trimStart?: string
   trimEnd?: string
 }
@@ -93,10 +98,13 @@ export async function processVideo(
       durationSec = metadata.format.duration || 0
     } catch {}
 
+    const isAudioExtraction = options.preset === 'extract_audio' || options.format === 'mp3'
+    const audioExt = options.audioExtractFormat || 'mp3'
+
     let outputPath = options.outputPath
     if (!outputPath) {
       const parsed = path.parse(options.inputPath)
-      const ext = options.format === 'mp3' ? '.mp3' : `.${options.format}`
+      const ext = isAudioExtraction ? `.${audioExt}` : `.${options.format}`
       const optimizedDir = path.join(parsed.dir, 'optimized')
       outputPath = path.join(optimizedDir, `${parsed.name}${ext}`)
     }
@@ -113,60 +121,104 @@ export async function processVideo(
         command.outputOptions(['-to', options.trimEnd.trim()])
       }
 
-      if (options.muteAudio && options.format !== 'mp3') {
-        command.noAudio()
-      }
-
-      let scaleFilter = ''
-      if (options.resolution && options.resolution !== 'original') {
-        switch (options.resolution) {
-          case '1080p':
-            scaleFilter = 'scale=-2:1080'
+      if (isAudioExtraction) {
+        switch (audioExt) {
+          case 'mp3':
+            command.toFormat('mp3').audioCodec('libmp3lame').audioBitrate('192k')
             break
-          case '720p':
-            scaleFilter = 'scale=-2:720'
+          case 'wav':
+            command.toFormat('wav').audioCodec('pcm_s16le')
             break
-          case '480p':
-            scaleFilter = 'scale=-2:480'
+          case 'flac':
+            command.toFormat('flac').audioCodec('flac')
             break
-          case '360p':
-            scaleFilter = 'scale=-2:360'
+          case 'aac':
+            command.toFormat('adts').audioCodec('aac').audioBitrate('192k')
+            break
+          case 'ogg':
+            command.toFormat('ogg').audioCodec('libvorbis').audioBitrate('192k')
             break
         }
-      }
-
-      if (options.format === 'mp3') {
-
-        command
-          .toFormat('mp3')
-          .audioCodec('libmp3lame')
-          .audioBitrate(192)
       } else if (options.format === 'gif') {
-
         const fps = options.fps || 15
-        const scale = scaleFilter ? `${scaleFilter}:flags=lanczos,` : 'scale=-2:480:flags=lanczos,'
+        const vfList: string[] = []
+
+        if (options.crop && options.crop !== 'keep') {
+          if (options.crop === '9:16') vfList.push('crop=min(iw\\,ih*9/16):min(ih\\,iw*16/9):(iw-ow)/2:(ih-oh)/2')
+          else if (options.crop === '1:1') vfList.push('crop=min(iw\\,ih):min(iw\\,ih):(iw-ow)/2:(ih-oh)/2')
+          else if (options.crop === '16:9') vfList.push('crop=min(iw\\,ih*16/9):min(ih\\,iw*9/16):(iw-ow)/2:(ih-oh)/2')
+          else if (options.crop === '4:5') vfList.push('crop=min(iw\\,ih*4/5):min(ih\\,iw*5/4):(iw-ow)/2:(ih-oh)/2')
+        }
+
+        let scale = 'scale=-2:480:flags=lanczos'
+        if (options.resolution && options.resolution !== 'original') {
+          scale = `scale=-2:${options.resolution.replace('p', '')}:flags=lanczos`
+        }
+        vfList.push(scale)
+
+        const vfStr = vfList.join(',')
         command
           .fps(fps)
-          .complexFilter([`${scale}split[s0][s1];[s0]palettegen=max_colors=128[p];[s1][p]paletteuse=dither=bayer`])
+          .complexFilter([`${vfStr ? vfStr + ',' : ''}split[s0][s1];[s0]palettegen=max_colors=128[p];[s1][p]paletteuse=dither=bayer`])
           .toFormat('gif')
       } else {
+        if (options.muteAudio) {
+          command.noAudio()
+        }
 
-        if (scaleFilter) {
-          command.videoFilters(scaleFilter)
+        const videoFilters: string[] = []
+
+        if (options.crop && options.crop !== 'keep') {
+          if (options.crop === '9:16') videoFilters.push('crop=min(iw\\,ih*9/16):min(ih\\,iw*16/9):(iw-ow)/2:(ih-oh)/2')
+          else if (options.crop === '1:1') videoFilters.push('crop=min(iw\\,ih):min(iw\\,ih):(iw-ow)/2:(ih-oh)/2')
+          else if (options.crop === '16:9') videoFilters.push('crop=min(iw\\,ih*16/9):min(ih\\,iw*9/16):(iw-ow)/2:(ih-oh)/2')
+          else if (options.crop === '4:5') videoFilters.push('crop=min(iw\\,ih*4/5):min(ih\\,iw*5/4):(iw-ow)/2:(ih-oh)/2')
+        }
+
+        if (options.resolution && options.resolution !== 'original') {
+          const height = options.resolution.replace('p', '')
+          videoFilters.push(`scale=-2:${height}`)
+        }
+
+        if (options.speed && options.speed !== 1.0) {
+          const ptsVal = (1 / options.speed).toFixed(4)
+          videoFilters.push(`setpts=${ptsVal}*PTS`)
+
+          if (!options.muteAudio) {
+            let atempo = ''
+            if (options.speed === 0.5) atempo = 'atempo=0.5'
+            else if (options.speed === 1.5) atempo = 'atempo=1.5'
+            else if (options.speed === 2.0) atempo = 'atempo=2.0'
+            else if (options.speed === 4.0) atempo = 'atempo=2.0,atempo=2.0'
+            if (atempo) command.audioFilters(atempo)
+          }
+        }
+
+        if (videoFilters.length > 0) {
+          command.videoFilters(videoFilters)
         }
 
         if (options.fps) {
           command.fps(options.fps)
         }
 
-        if (options.preset === 'target_size' && options.targetSizeMB && durationSec > 0) {
+        let vCodec = 'libx264'
+        if (options.gpu === 'nvenc') {
+          vCodec = 'h264_nvenc'
+        } else if (options.gpu === 'qsv') {
+          vCodec = 'h264_qsv'
+        } else if (options.gpu === 'amf') {
+          vCodec = 'h264_amf'
+        }
 
+        if (options.preset === 'target_size' && options.targetSizeMB && durationSec > 0) {
+          const effectiveDuration = options.speed && options.speed !== 1 ? durationSec / options.speed : durationSec
           const targetTotalKbits = options.targetSizeMB * 8192 * 0.95
           const audioBitrateKbits = options.muteAudio ? 0 : 96
-          const videoBitrateKbits = Math.max(100, Math.floor((targetTotalKbits / durationSec) - audioBitrateKbits))
+          const videoBitrateKbits = Math.max(100, Math.floor((targetTotalKbits / effectiveDuration) - audioBitrateKbits))
 
           command
-            .videoCodec('libx264')
+            .videoCodec(vCodec)
             .videoBitrate(`${videoBitrateKbits}k`)
             .outputOptions([
               '-preset fast',
@@ -179,7 +231,6 @@ export async function processVideo(
             command.audioCodec('aac').audioBitrate('96k')
           }
         } else {
-
           let crf = options.crf || 23
           if (options.preset === 'high_compression') {
             crf = 28
@@ -200,11 +251,10 @@ export async function processVideo(
               command.audioCodec('libopus').audioBitrate('128k')
             }
           } else {
-
             command
-              .videoCodec('libx264')
+              .videoCodec(vCodec)
               .outputOptions([
-                `-crf ${crf}`,
+                options.gpu && options.gpu !== 'cpu' && options.gpu !== 'auto' ? `-cq ${crf}` : `-crf ${crf}`,
                 '-preset medium',
                 '-pix_fmt yuv420p',
                 '-movflags +faststart'
@@ -221,11 +271,11 @@ export async function processVideo(
         if (prog.percent && prog.percent > 0) {
           percent = Math.min(100, Math.max(0, prog.percent))
         } else if (durationSec > 0 && prog.timemark) {
-
           const parts = prog.timemark.split(':')
           if (parts.length === 3) {
             const currentSec = parseFloat(parts[0]) * 3600 + parseFloat(parts[1]) * 60 + parseFloat(parts[2])
-            percent = Math.min(99, Math.max(0, (currentSec / durationSec) * 100))
+            const totalSec = options.speed && options.speed !== 1 ? durationSec / options.speed : durationSec
+            percent = Math.min(99, Math.max(0, (currentSec / totalSec) * 100))
           }
         }
 

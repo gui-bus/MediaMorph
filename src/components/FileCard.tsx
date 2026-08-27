@@ -17,6 +17,7 @@ import {
   EditImageSvg,
   ScissorSvg,
 } from './CustomIcons'
+import { AudioPlayerMini } from './AudioPlayerMini'
 
 interface FileCardProps {
   file: FileItem
@@ -141,6 +142,11 @@ export const FileCard: React.FC<FileCardProps> = ({
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
+          {file.isAudio && !isProcessing && (
+            <div className="mr-1">
+              <AudioPlayerMini filePath={file.path} title={file.name} />
+            </div>
+          )}
 
           {!isCompleted && !isProcessing && file.isVideo && onOpenTrimmer && (
             <button

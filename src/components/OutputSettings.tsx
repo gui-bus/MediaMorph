@@ -1,6 +1,8 @@
 import React from 'react'
-import { OutputSettingsState } from '../types'
+import { OutputSettingsState, NamingPattern } from '../types'
 import { DownloadSvg, OpenFolderSvg } from './CustomIcons'
+import { FileSignature, Tags } from 'lucide-react'
+import { SearchableSelect, SelectOption } from './SearchableSelect'
 
 interface OutputSettingsProps {
   settings: OutputSettingsState
@@ -13,12 +15,21 @@ export const OutputSettings: React.FC<OutputSettingsProps> = ({
   onChange,
   disabled,
 }) => {
+  const namingOptions: SelectOption[] = [
+    { value: 'original', label: 'Nome Original', desc: 'Ex: foto.webp' },
+    { value: '{name}_optimized', label: '{name}_optimized', desc: 'Ex: foto_optimized.webp', badge: 'Recomendado' },
+    { value: '{name}_{date}', label: '{name}_{data}', desc: 'Ex: foto_2026-08-27.webp' },
+    { value: '{counter}_{name}', label: '{contador}_{name}', desc: 'Ex: 01_foto.webp, 02_foto.webp' },
+    { value: 'custom', label: 'Padrão Personalizado...', desc: 'Use tags como {name}, {date}, {counter}' },
+  ]
+
   const handleSelectCustomFolder = async () => {
     if (disabled) return
     if ((window as any).electronAPI) {
       const selected = await (window as any).electronAPI.selectFolder()
       if (selected) {
         onChange({
+          ...settings,
           mode: 'custom_directory',
           customPath: selected,
         })
@@ -28,15 +39,16 @@ export const OutputSettings: React.FC<OutputSettingsProps> = ({
 
   return (
     <div className="bg-surface border border-border rounded-2xl p-5 shadow-sm space-y-4 transition-colors">
-      <div className="flex items-center gap-2">
-        <DownloadSvg className="h-4 w-4" />
-        <h2 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
-          Destino dos Arquivos Convertidos
-        </h2>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <DownloadSvg className="h-4 w-4" />
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+            Destino & Nomenclatura dos Arquivos
+          </h2>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-
         <label
           className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
             settings.mode === 'same_directory'
@@ -57,7 +69,7 @@ export const OutputSettings: React.FC<OutputSettingsProps> = ({
               Pasta "optimized" no mesmo local
             </span>
             <span className="text-[11px] text-gray-500 dark:text-gray-400">
-              Mantém o nome original do arquivo e salva automaticamente dentro da pasta <code className="bg-surface px-1 py-0.5 rounded border border-border">optimized/</code>.
+              Salva automaticamente dentro da subpasta <code className="bg-surface px-1 py-0.5 rounded border border-border">optimized/</code>.
             </span>
           </div>
         </label>
@@ -97,6 +109,35 @@ export const OutputSettings: React.FC<OutputSettingsProps> = ({
             </span>
           </div>
         </label>
+      </div>
+
+      <div className="pt-2 border-t border-border/80 grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+        <div className="space-y-1">
+          <SearchableSelect
+            label="Padrão de Nome do Arquivo de Saída"
+            options={namingOptions}
+            value={settings.namingPattern || 'original'}
+            onChange={(val) => onChange({ ...settings, namingPattern: val as NamingPattern })}
+            disabled={disabled}
+          />
+        </div>
+
+        {settings.namingPattern === 'custom' && (
+          <div className="space-y-1">
+            <label className="text-[11px] font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
+              <Tags className="h-3 w-3 text-emerald-500" />
+              Template Personalizado ({'{name}'}, {'{date}'}, {'{counter}'})
+            </label>
+            <input
+              type="text"
+              placeholder="Ex: {date}_{name}_web"
+              disabled={disabled}
+              value={settings.customNamingPattern || ''}
+              onChange={(e) => onChange({ ...settings, customNamingPattern: e.target.value })}
+              className="w-full bg-background border border-border rounded-xl px-3 py-2 text-xs text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-none focus:border-emerald-500"
+            />
+          </div>
+        )}
       </div>
     </div>
   )
