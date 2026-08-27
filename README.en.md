@@ -194,8 +194,3 @@ The standalone production executable will be created at:
 
 This project is licensed under the **MIT License**. See the [LICENSE](./LICENSE) file for more details.
 
----
-
-<div align="center">
-  Built with 💚 by <a href="https://github.com/gui-bus">Guilherme Bustamante</a>
-</div>

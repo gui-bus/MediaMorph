@@ -194,8 +194,3 @@ O executável standalone pronto para uso será gerado na pasta:
 
 Este projeto é distribuído sob a licença **MIT**. Consulte o arquivo [LICENSE](./LICENSE) para mais detalhes.
 
----
-
-<div align="center">
-  Desenvolvido com 💚 por <a href="https://github.com/gui-bus">Guilherme Bustamante</a>
-</div>
