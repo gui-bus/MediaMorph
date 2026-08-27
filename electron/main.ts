@@ -59,6 +59,72 @@ function isPdfFile(ext: string): boolean {
   return PDF_EXTENSIONS.includes(ext.toLowerCase())
 }
 
+const videoThumbnailCache = new Map<string, string>()
+
+async function getVideoThumbnail(filePath: string): Promise<string | undefined> {
+  if (videoThumbnailCache.has(filePath)) {
+    return videoThumbnailCache.get(filePath)
+  }
+
+  return new Promise((resolve) => {
+    const bufs: Buffer[] = []
+    let isSettled = false
+
+    const finish = (result?: string) => {
+      if (isSettled) return
+      isSettled = true
+      if (result) {
+        videoThumbnailCache.set(filePath, result)
+      }
+      resolve(result)
+    }
+
+    const timer = setTimeout(() => {
+      try {
+        proc.kill('SIGKILL')
+      } catch {}
+      finish(undefined)
+    }, 3000)
+
+    const proc = ffmpeg(filePath)
+      .seekInput('00:00:01')
+      .frames(1)
+      .size('120x?')
+      .format('image2')
+      .outputOptions(['-vcodec mjpeg', '-q:v 3'])
+      .on('error', () => {
+        clearTimeout(timer)
+        const fbBufs: Buffer[] = []
+        ffmpeg(filePath)
+          .frames(1)
+          .size('120x?')
+          .format('image2')
+          .outputOptions(['-vcodec mjpeg', '-q:v 3'])
+          .on('error', () => finish(undefined))
+          .pipe()
+          .on('data', (c: Buffer) => fbBufs.push(c))
+          .on('end', () => {
+            if (fbBufs.length > 0) {
+              finish(`data:image/jpeg;base64,${Buffer.concat(fbBufs).toString('base64')}`)
+            } else {
+              finish(undefined)
+            }
+          })
+      })
+
+    proc.pipe()
+      .on('data', (c: Buffer) => bufs.push(c))
+      .on('end', () => {
+        clearTimeout(timer)
+        if (bufs.length > 0) {
+          finish(`data:image/jpeg;base64,${Buffer.concat(bufs).toString('base64')}`)
+        } else {
+          finish(undefined)
+        }
+      })
+  })
+}
+
 function getAppIcon(): Electron.NativeImage | string {
   const root = process.env.APP_ROOT || path.join(__dirname, '..')
   const possiblePaths = [
@@ -128,6 +194,10 @@ async function scanDirectoryRecursive(dirPath: string): Promise<any[]> {
                   .jpeg({ quality: 60 })
                   .toBuffer()
                 thumbnail = `data:image/jpeg;base64,${thumbBuf.toString('base64')}`
+              } catch {}
+            } else if (isVid) {
+              try {
+                thumbnail = await getVideoThumbnail(fullPath)
               } catch {}
             }
 
@@ -205,6 +275,10 @@ async function listDirectoryItems(dirPath: string): Promise<any[]> {
                   .jpeg({ quality: 60 })
                   .toBuffer()
                 thumbnail = `data:image/jpeg;base64,${thumbBuf.toString('base64')}`
+              } catch {}
+            } else if (isVid) {
+              try {
+                thumbnail = await getVideoThumbnail(fullPath)
               } catch {}
             }
 
@@ -331,6 +405,10 @@ app.whenReady().then(() => {
               .toBuffer()
             thumbnail = `data:image/jpeg;base64,${thumbBuf.toString('base64')}`
           } catch {}
+        } else if (isVid) {
+          try {
+            thumbnail = await getVideoThumbnail(filePath)
+          } catch {}
         }
 
         items.push({
@@ -411,6 +489,10 @@ app.whenReady().then(() => {
             .jpeg({ quality: 60 })
             .toBuffer()
           thumbnail = `data:image/jpeg;base64,${thumbBuf.toString('base64')}`
+        } catch {}
+      } else if (isVid) {
+        try {
+          thumbnail = await getVideoThumbnail(filePath)
         } catch {}
       }
 
