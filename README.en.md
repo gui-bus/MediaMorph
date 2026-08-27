@@ -30,9 +30,14 @@ Engineered for creators, developers, designers, and power users, MediaMorph comb
 
 ## ⚡ What You Can Do with MediaMorph
 
-Below is the complete catalogue of all capabilities, features, and media operations available:
+Below is the complete catalogue of all capabilities, features, and interface screenshots:
 
 ### 🖼️ 1. Images & Icons
+
+<p align="center">
+  <img src="./public/utils/images.webp" alt="MediaMorph - Images & Icons" width="100%" />
+</p>
+
 - **Multi-Format Conversion & Compression:** Convert between **PNG, JPG/JPEG, WebP, AVIF, GIF, TIFF, BMP, SVG, and ICO**.
 - **Smart Native Image Compressor (*TinyPNG / MozJPEG Style*):** Keep the original format (PNG stays PNG, JPG stays JPG) while slashing file size by up to 70-80% using level-9 palette quantization and MozJPEG.
 - **Batch Watermarking:**
@@ -51,6 +56,11 @@ Below is the complete catalogue of all capabilities, features, and media operati
 ---
 
 ### 🎬 2. Videos & Animations
+
+<p align="center">
+  <img src="./public/utils/videos.webp" alt="MediaMorph - Videos & Animations" width="100%" />
+</p>
+
 - **High-Efficiency Video Encoding:** Convert videos between **MP4 (H.264), WebM (VP9), MKV, AVI, MOV, FLV, WMV, M4V, and 3GP**.
 - **GPU Hardware Acceleration:** Hardware encoding powered by **NVIDIA NVENC**, **Intel QuickSync**, and **AMD AMF**.
 - **FPS & Speed / Timelapse Controls:**
@@ -72,6 +82,11 @@ Below is the complete catalogue of all capabilities, features, and media operati
 ---
 
 ### 🎵 3. Audio & Music
+
+<p align="center">
+  <img src="./public/utils/audios.webp" alt="MediaMorph - Audio & Music" width="100%" />
+</p>
+
 - **Audio Conversion:** Full support for **MP3, WAV, FLAC, AAC, OGG, M4A, WMA, and AIFF**.
 - **Inline Mini Audio Player:** Play and preview audio files directly on queue cards and inside the file explorer before converting.
 - **Bitrate Customization:** Choose between *128 kbps, 192 kbps, 256 kbps, and 320 kbps*.
@@ -81,7 +96,12 @@ Below is the complete catalogue of all capabilities, features, and media operati
 ---
 
 ### 📄 4. PDF Documents
-- **Direct PDF Compression (Shrink MBs):** Compress heavy PDF files (e.g. 50 MB down to 5 MB) with smart presets (*Recommended 70%, High Quality 85%, Extreme 50%*), preserving original page dimensions and layout.
+
+<p align="center">
+  <img src="./public/utils/pdfs.webp" alt="MediaMorph - PDF Documents" width="100%" />
+</p>
+
+- **Direct PDF Compression (Shrink MBs):** Compress heavy PDF files (e.g. 50 MB down to 5 MB) with smart presets (*Recommended 65%, High Quality 75%, Extreme 45%*), preserving original page dimensions and layout.
 - **Images ➔ Single PDF:** Merge and compile multiple photos/images into a single PDF document with custom page order and quality compression.
 - **PDF ➔ Page Extraction to Images:** Load any PDF document and extract each page as a standalone image in **WebP, PNG, JPEG, AVIF, or TIFF** (150 to 450 DPI).
 - **Merge Multiple PDFs:** Combine multiple PDF documents into a single continuous file.
@@ -90,6 +110,7 @@ Below is the complete catalogue of all capabilities, features, and media operati
 ---
 
 ### 📂 5. File Explorer, Productivity & Presets
+- **1-Click Bilingual Language Switcher (i18n):** Toggle between 🇧🇷 Portuguese and 🇺🇸 English with one click.
 - **Smart Batch Renaming:** Configure dynamic output naming templates using tags like `{name}`, `{date}`, `{counter}`, and `{ext}`.
 - **User Presets Manager:** Save and load your favorite configuration setups with 1 click.
 - **Queue Pause & Resume:** Pause heavy batch conversion tasks and resume anytime without losing progress.
