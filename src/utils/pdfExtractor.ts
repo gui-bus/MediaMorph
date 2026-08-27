@@ -1,7 +1,21 @@
 import * as pdfjsLib from 'pdfjs-dist'
 
+if (typeof Uint8Array !== 'undefined' && !(Uint8Array.prototype as any).toHex) {
+  ;(Uint8Array.prototype as any).toHex = function () {
+    return Array.from(this)
+      .map((b: any) => b.toString(16).padStart(2, '0'))
+      .join('')
+  }
+}
+
+if (typeof Number !== 'undefined' && !(Number.prototype as any).toHex) {
+  ;(Number.prototype as any).toHex = function () {
+    return this.toString(16)
+  }
+}
+
 if (typeof window !== 'undefined') {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version || '4.10.38'}/build/pdf.worker.min.mjs`
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`
 }
 
 export interface ExtractedPage {
@@ -23,7 +37,7 @@ export async function extractPagesFromPdf(
 
   const loadingTask = pdfjsLib.getDocument({
     data: bytes,
-    cMapUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version || '4.10.38'}/cmaps/`,
+    cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
     cMapPacked: true,
   })
 
@@ -42,10 +56,9 @@ export async function extractPagesFromPdf(
 
     if (ctx) {
       await page.render({
-        canvasContext: ctx as any,
+        canvasContext: ctx,
         viewport,
-        canvas: canvas as any,
-      } as any).promise
+      }).promise
 
       const dataUrl = canvas.toDataURL('image/png')
       pages.push({

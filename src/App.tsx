@@ -726,7 +726,7 @@ export function App() {
         onToggleTheme={handleToggleTheme}
       />
 
-      <main className="flex-1 max-w-[1700px] w-full mx-auto p-4 sm:p-6 space-y-6 pb-28">
+      <main className="flex-1 max-w-[1700px] w-full mx-auto p-4 sm:p-6 space-y-6 pb-12">
         <StatsBanner stats={lifetimeStats} />
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -789,25 +789,23 @@ export function App() {
               onOpenTrimmer={(file: FileItem) => setTrimmingFile(file)}
               disabled={isProcessing}
             />
+
+            {filteredFiles.length > 0 && (
+              <div className="sticky bottom-4 z-20 pt-2">
+                <QueueSummary
+                  files={filteredFiles}
+                  activeTab={activeTab}
+                  pdfMode={pdfSettings.mode}
+                  isProcessing={isProcessing}
+                  onStartProcess={handleStartProcess}
+                  onClearCompleted={handleClearCompleted}
+                  onClearAll={handleClearAll}
+                />
+              </div>
+            )}
           </div>
         </div>
       </main>
-
-      {filteredFiles.length > 0 && (
-        <footer className="fixed bottom-6 left-0 right-0 max-w-[1700px] mx-auto px-5 sm:px-6 pointer-events-none z-30">
-          <div className="pointer-events-auto">
-            <QueueSummary
-              files={filteredFiles}
-              activeTab={activeTab}
-              pdfMode={pdfSettings.mode}
-              isProcessing={isProcessing}
-              onStartProcess={handleStartProcess}
-              onClearCompleted={handleClearCompleted}
-              onClearAll={handleClearAll}
-            />
-          </div>
-        </footer>
-      )}
 
       {comparingFile && comparingFile.result && (
         <BeforeAfterModal

@@ -5,14 +5,14 @@ import { fileURLToPath } from 'node:url'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootDir = path.resolve(__dirname, '..')
 
-const TARGET_DIRS = ['src', 'electron', 'scripts']
-const TARGET_FILES = ['vite.config.ts', 'tailwind.config.js', 'postcss.config.js', 'electron-builder.json5']
+const TARGET_DIRS = ['src', 'electron']
+const TARGET_FILES = ['vite.config.ts', 'tailwind.config.js', 'postcss.config.cjs', 'electron-builder.json5']
 const EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.mjs', '.cjs', '.css', '.json5'])
-const IGNORE_DIRS = new Set(['node_modules', 'dist', 'dist-electron', 'release', '.git', '.vscode'])
+const IGNORE_DIRS = new Set(['node_modules', 'dist', 'dist-electron', 'release', '.git', '.vscode', 'scripts'])
 
 function stripCommentsFromCode(code, ext) {
   if (ext === '.css') {
-    return code.replace(/\/\*[\s\S]*?\*\
+    return code.replace(/\/\*[\s\S]*?\*\//g, '')
   }
 
   if (ext === '.tsx' || ext === '.jsx') {
@@ -164,7 +164,7 @@ async function getFilesToProcess(dir) {
         }
       } else if (entry.isFile()) {
         const ext = path.extname(entry.name)
-        if (EXTENSIONS.has(ext) && entry.name !== 'strip-comments.js') {
+        if (EXTENSIONS.has(ext) && !entry.name.startsWith('strip-comments')) {
           files.push(fullPath)
         }
       }
