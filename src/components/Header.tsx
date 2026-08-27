@@ -29,6 +29,15 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleTheme,
 }) => {
   const isDark = theme === 'dark'
+  const [appVersion, setAppVersion] = React.useState('v1.0.0')
+
+  React.useEffect(() => {
+    if ((window as any).electronAPI?.getAppVersion) {
+      ;(window as any).electronAPI.getAppVersion().then((ver: string) => {
+        if (ver) setAppVersion(`v${ver}`)
+      })
+    }
+  }, [])
 
   const getTabClass = (tab: MediaTab) => {
     const isActive = activeTab === tab
@@ -45,7 +54,7 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center gap-2.5">
           <Logo className="h-7 w-auto" isDark={isDark} />
           <span className="text-[10px] font-mono font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-            v1.2
+            {appVersion}
           </span>
         </div>
       </div>
