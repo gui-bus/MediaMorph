@@ -2,6 +2,8 @@
 {
   "appId": "com.mediamorph.app",
   "productName": "MediaMorph",
+  "npmRebuild": false,
+  "buildDependenciesFromSource": false,
   "directories": {
     "output": "release/${version}"
   },
