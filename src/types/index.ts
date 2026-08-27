@@ -71,10 +71,17 @@ export interface AudioGlobalSettings {
   normalizeVolume: boolean
 }
 
+export type PdfMode = 'images_to_pdf' | 'pdf_to_images'
+export type PdfExtractFormat = 'png' | 'webp' | 'jpeg' | 'avif' | 'tiff'
+
 export interface PdfGlobalSettings {
+  mode: PdfMode
   pageSize: 'fit_image' | 'a4'
   quality: number
   customPdfName?: string
+  extractFormat: PdfExtractFormat
+  extractScale: number
+  extractQuality: number
 }
 
 export interface OutputSettingsState {

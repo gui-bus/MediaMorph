@@ -1,14 +1,17 @@
 import { app, BrowserWindow, ipcMain, dialog, shell, Notification, protocol, net } from 'electron'
 import path from 'node:path'
 import fs from 'node:fs/promises'
-import { pathToFileURL } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import sharp from 'sharp'
 import ffmpegInstaller from '@ffmpeg-installer/ffmpeg'
 import ffmpeg from 'fluent-ffmpeg'
 import { processImage, ImageProcessOptions } from './services/imageService'
 import { processVideo, VideoProcessOptions, VideoProgressEvent, getVideoMetadata } from './services/videoService'
 import { processAudio, AudioProcessOptions } from './services/audioService'
-import { convertImagesToPdf, ImagesToPdfOptions } from './services/pdfService'
+import { convertImagesToPdf, ImagesToPdfOptions, savePdfPagesToImages, SavePdfPagesOptions } from './services/pdfService'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 process.env.APP_ROOT = path.join(__dirname, '..')
 
@@ -51,76 +54,6 @@ function isPdfFile(ext: string): boolean {
   return PDF_EXTENSIONS.includes(ext.toLowerCase())
 }
 
-async function generateThumbnail(filePath: string, isImage: boolean, isVideo: boolean): Promise<string | undefined> {
-  if (isImage) {
-    try {
-      const buffer = await sharp(filePath)
-        .resize(120, 120, { fit: 'cover' })
-        .webp({ quality: 60 })
-        .toBuffer()
-      return `data:image/webp;base64,${buffer.toString('base64')}`
-    } catch {
-      return undefined
-    }
-  }
-
-  if (isVideo) {
-    try {
-      return await new Promise((resolve) => {
-        const chunks: Buffer[] = []
-        ffmpeg(filePath)
-          .seekInput(1)
-          .frames(1)
-          .size('120x120')
-          .format('image2')
-          .outputOptions('-vcodec mjpeg')
-          .on('error', () => resolve(undefined))
-          .pipe()
-          .on('data', (chunk: Buffer) => chunks.push(chunk))
-          .on('end', () => {
-            const buf = Buffer.concat(chunks)
-            if (buf.length > 0) {
-              resolve(`data:image/jpeg;base64,${buf.toString('base64')}`)
-            } else {
-              resolve(undefined)
-            }
-          })
-      })
-    } catch {
-      return undefined
-    }
-  }
-
-  return undefined
-}
-
-async function getFileInfo(filePath: string) {
-  try {
-    const stat = await fs.stat(filePath)
-    if (!stat.isFile()) return null
-    const ext = path.extname(filePath).toLowerCase()
-    const isImage = isImageFile(ext)
-    const isVideo = isVideoFile(ext)
-    const isAudio = isAudioFile(ext)
-    const isPdf = isPdfFile(ext)
-    const thumbnail = await generateThumbnail(filePath, isImage, isVideo)
-
-    return {
-      name: path.basename(filePath),
-      path: filePath,
-      size: stat.size,
-      ext,
-      isImage,
-      isVideo,
-      isAudio,
-      isPdf,
-      thumbnail,
-    }
-  } catch {
-    return null
-  }
-}
-
 async function scanDirectoryRecursive(dirPath: string): Promise<any[]> {
   const results: any[] = []
   try {
@@ -128,43 +61,153 @@ async function scanDirectoryRecursive(dirPath: string): Promise<any[]> {
     for (const entry of entries) {
       const fullPath = path.join(dirPath, entry.name)
       if (entry.isDirectory()) {
-        if (!['node_modules', '.git', 'optimized', '$Recycle.Bin', 'System Volume Information'].includes(entry.name)) {
-          const subFiles = await scanDirectoryRecursive(fullPath)
-          results.push(...subFiles)
-        }
+        const subFiles = await scanDirectoryRecursive(fullPath)
+        results.push(...subFiles)
       } else if (entry.isFile()) {
-        const info = await getFileInfo(fullPath)
-        if (info && (info.isImage || info.isVideo || info.isAudio || info.isPdf)) {
-          results.push(info)
+        const ext = path.extname(entry.name).toLowerCase()
+        const isImg = isImageFile(ext)
+        const isVid = isVideoFile(ext)
+        const isAud = isAudioFile(ext)
+        const isPdf = isPdfFile(ext)
+
+        if (isImg || isVid || isAud || isPdf) {
+          try {
+            const stat = await fs.stat(fullPath)
+            let thumbnail: string | undefined
+
+            if (isImg && stat.size < 50 * 1024 * 1024) {
+              try {
+                const thumbBuf = await sharp(fullPath)
+                  .resize(100, 100, { fit: 'inside' })
+                  .jpeg({ quality: 60 })
+                  .toBuffer()
+                thumbnail = `data:image/jpeg;base64,${thumbBuf.toString('base64')}`
+              } catch {}
+            }
+
+            results.push({
+              name: entry.name,
+              path: fullPath,
+              size: stat.size,
+              ext,
+              isImage: isImg,
+              isVideo: isVid,
+              isAudio: isAud,
+              isPdf,
+              thumbnail,
+            })
+          } catch {}
         }
       }
     }
   } catch (err) {
-    console.error('Erro ao varrer diretório:', err)
+    console.error(`Erro ao ler pasta ${dirPath}:`, err)
+  }
+  return results
+}
+
+function getSystemLocations(): Array<{ name: string; path: string; icon: string }> {
+  const locations: Array<{ name: string; path: string; icon: string }> = []
+  try {
+    locations.push({ name: 'Downloads', path: app.getPath('downloads'), icon: 'downloads' })
+    locations.push({ name: 'Área de Trabalho', path: app.getPath('desktop'), icon: 'desktop' })
+    locations.push({ name: 'Imagens', path: app.getPath('pictures'), icon: 'pictures' })
+    locations.push({ name: 'Vídeos', path: app.getPath('videos'), icon: 'videos' })
+    locations.push({ name: 'Documentos', path: app.getPath('documents'), icon: 'documents' })
+    if (process.platform === 'win32') {
+      locations.push({ name: 'Disco Local (C:)', path: 'C:\\', icon: 'drive' })
+    }
+  } catch (err) {
+    console.error('Erro ao obter pastas do sistema:', err)
+  }
+  return locations
+}
+
+async function listDirectoryItems(dirPath: string): Promise<any[]> {
+  const results: any[] = []
+  try {
+    const entries = await fs.readdir(dirPath, { withFileTypes: true })
+    for (const entry of entries) {
+      const fullPath = path.join(dirPath, entry.name)
+      if (entry.isDirectory()) {
+        results.push({
+          name: entry.name,
+          path: fullPath,
+          size: 0,
+          ext: '',
+          isImage: false,
+          isVideo: false,
+          isAudio: false,
+          isDirectory: true,
+        })
+      } else if (entry.isFile()) {
+        const ext = path.extname(entry.name).toLowerCase()
+        const isImg = isImageFile(ext)
+        const isVid = isVideoFile(ext)
+        const isAud = isAudioFile(ext)
+        const isPdf = isPdfFile(ext)
+
+        if (isImg || isVid || isAud || isPdf) {
+          try {
+            const stat = await fs.stat(fullPath)
+            let thumbnail: string | undefined
+
+            if (isImg && stat.size < 50 * 1024 * 1024) {
+              try {
+                const thumbBuf = await sharp(fullPath)
+                  .resize(100, 100, { fit: 'inside' })
+                  .jpeg({ quality: 60 })
+                  .toBuffer()
+                thumbnail = `data:image/jpeg;base64,${thumbBuf.toString('base64')}`
+              } catch {}
+            }
+
+            results.push({
+              name: entry.name,
+              path: fullPath,
+              size: stat.size,
+              ext,
+              isImage: isImg,
+              isVideo: isVid,
+              isAudio: isAud,
+              isPdf,
+              thumbnail,
+              isDirectory: false,
+            })
+          } catch {}
+        }
+      }
+    }
+  } catch (err) {
+    console.error(`Erro ao listar itens de ${dirPath}:`, err)
   }
   return results
 }
 
 function createWindow() {
   const root = process.env.APP_ROOT || path.join(__dirname, '..')
-  const iconPath = path.join(root, 'public', 'icon.png')
+  const iconPath = path.join(root, 'build', 'icon.ico')
 
   win = new BrowserWindow({
-    width: 1280,
-    height: 860,
-    minWidth: 960,
-    minHeight: 650,
-    title: 'MediaMorph - Conversor & Compressor',
+    title: 'MediaMorph',
     icon: iconPath,
-    backgroundColor: '#161616',
+    width: 1300,
+    height: 860,
+    minWidth: 900,
+    minHeight: 650,
     autoHideMenuBar: true,
+    backgroundColor: '#161616',
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(__dirname, 'preload.mjs'),
       nodeIntegration: false,
       contextIsolation: true,
-      sandbox: false,
       webSecurity: false,
+      sandbox: false,
     },
+  })
+
+  win.webContents.on('did-finish-load', () => {
+    win?.webContents.send('main-process-message', new Date().toLocaleString())
   })
 
   if (process.env.VITE_DEV_SERVER_URL) {
@@ -187,221 +230,199 @@ app.on('activate', () => {
   }
 })
 
-protocol.registerSchemesAsPrivileged([
-  {
-    scheme: 'media',
-    privileges: {
-      standard: true,
-      secure: true,
-      supportFetchAPI: true,
-      corsEnabled: true,
-      stream: true,
-    },
-  },
-])
+app.whenReady().then(() => {
+  createWindow()
 
-ipcMain.handle('app:getVersion', () => app.getVersion())
+  ipcMain.handle('dialog:selectFiles', async (_event, type: 'images' | 'videos' | 'audio' | 'pdf' | 'all') => {
+    if (!win) return []
 
-ipcMain.handle('media:getVideoMetadata', async (_event, filePath: string) => {
-  return await getVideoMetadata(filePath)
-})
+    let filters: Electron.FileFilter[] = []
 
-ipcMain.handle('app:notify', (_event, title: string, body: string) => {
-  if (Notification.isSupported()) {
-    new Notification({ title, body }).show()
-  }
-})
-
-ipcMain.handle('shell:openPath', async (_event, targetPath: string) => {
-  return await shell.openPath(targetPath)
-})
-
-ipcMain.handle('shell:showItemInFolder', async (_event, filePath: string) => {
-  shell.showItemInFolder(filePath)
-})
-
-ipcMain.handle('media:getFileInfo', async (_event, filePath: string) => {
-  try {
-    const stat = await fs.stat(filePath)
-    if (stat.isDirectory()) {
-      return await scanDirectoryRecursive(filePath)
-    }
-    return await getFileInfo(filePath)
-  } catch {
-    return null
-  }
-})
-
-ipcMain.handle('media:scanDirectory', async (_event, dirPath: string) => {
-  return await scanDirectoryRecursive(dirPath)
-})
-
-ipcMain.handle('fs:getSystemLocations', async () => {
-  const locations = [
-    { name: 'Downloads', path: app.getPath('downloads'), icon: 'downloads' },
-    { name: 'Área de Trabalho', path: app.getPath('desktop'), icon: 'desktop' },
-    { name: 'Imagens', path: app.getPath('pictures'), icon: 'pictures' },
-    { name: 'Vídeos', path: app.getPath('videos'), icon: 'videos' },
-    { name: 'Documentos', path: app.getPath('documents'), icon: 'documents' },
-    { name: 'Disco Local (C:)', path: 'C:\\', icon: 'drive' },
-  ]
-  return locations
-})
-
-ipcMain.handle('fs:listDirectory', async (_event, dirPath: string) => {
-  try {
-    const entries = await fs.readdir(dirPath, { withFileTypes: true })
-    const items: any[] = []
-
-    for (const entry of entries) {
-      if (entry.name.startsWith('.') || ['node_modules', 'System Volume Information', '$Recycle.Bin'].includes(entry.name)) {
-        continue
-      }
-      const fullPath = path.join(dirPath, entry.name)
-      if (entry.isDirectory()) {
-        items.push({
-          name: entry.name,
-          path: fullPath,
-          isDirectory: true,
-        })
-      } else if (entry.isFile()) {
-        const ext = path.extname(entry.name).toLowerCase()
-        if (isImageFile(ext) || isVideoFile(ext) || isAudioFile(ext) || isPdfFile(ext)) {
-          const info = await getFileInfo(fullPath)
-          if (info) {
-            items.push({
-              ...info,
-              isDirectory: false,
-            })
-          }
-        }
-      }
+    if (type === 'images') {
+      filters = [{ name: 'Imagens', extensions: ['png', 'jpg', 'jpeg', 'webp', 'avif', 'gif', 'tiff', 'bmp', 'svg', 'ico'] }]
+    } else if (type === 'videos') {
+      filters = [{ name: 'Vídeos', extensions: ['mp4', 'mkv', 'mov', 'webm', 'avi', 'flv', 'wmv', 'm4v', '3gp', 'ts'] }]
+    } else if (type === 'audio') {
+      filters = [{ name: 'Áudios', extensions: ['mp3', 'wav', 'flac', 'aac', 'm4a', 'ogg', 'opus', 'wma', 'aiff'] }]
+    } else if (type === 'pdf') {
+      filters = [{ name: 'PDFs & Imagens', extensions: ['pdf', 'png', 'jpg', 'jpeg', 'webp', 'avif', 'tiff'] }]
+    } else {
+      filters = [
+        { name: 'Todas as Mídias Suportadas', extensions: ['png', 'jpg', 'jpeg', 'webp', 'avif', 'gif', 'tiff', 'bmp', 'svg', 'ico', 'mp4', 'mkv', 'mov', 'webm', 'avi', 'flv', 'wmv', 'm4v', '3gp', 'ts', 'mp3', 'wav', 'flac', 'aac', 'm4a', 'ogg', 'opus', 'wma', 'aiff', 'pdf'] },
+      ]
     }
 
-    items.sort((a, b) => {
-      if (a.isDirectory && !b.isDirectory) return -1
-      if (!a.isDirectory && b.isDirectory) return 1
-      return a.name.localeCompare(b.name)
+    const { canceled, filePaths } = await dialog.showOpenDialog(win, {
+      title: 'Selecionar Arquivos para Conversão',
+      properties: ['openFile', 'multiSelections'],
+      filters,
     })
 
+    if (canceled || filePaths.length === 0) return []
+
+    const items: any[] = []
+    for (const filePath of filePaths) {
+      const ext = path.extname(filePath).toLowerCase()
+      const name = path.basename(filePath)
+      const isImg = isImageFile(ext)
+      const isVid = isVideoFile(ext)
+      const isAud = isAudioFile(ext)
+      const isPdf = isPdfFile(ext)
+
+      try {
+        const stat = await fs.stat(filePath)
+        let thumbnail: string | undefined
+
+        if (isImg && stat.size < 50 * 1024 * 1024) {
+          try {
+            const thumbBuf = await sharp(filePath)
+              .resize(120, 120, { fit: 'inside' })
+              .jpeg({ quality: 60 })
+              .toBuffer()
+            thumbnail = `data:image/jpeg;base64,${thumbBuf.toString('base64')}`
+          } catch {}
+        }
+
+        items.push({
+          name,
+          path: filePath,
+          size: stat.size,
+          ext,
+          isImage: isImg,
+          isVideo: isVid,
+          isAudio: isAud,
+          isPdf,
+          thumbnail,
+        })
+      } catch {}
+    }
+
     return items
-  } catch (err: any) {
-    return []
-  }
-})
-
-ipcMain.handle('media:readFileBase64', async (_event, filePath: string) => {
-  try {
-    const data = await fs.readFile(filePath)
-    const ext = path.extname(filePath).toLowerCase().replace('.', '')
-    const mime = ext === 'jpg' ? 'jpeg' : ext === 'svg' ? 'svg+xml' : ext
-    return `data:image/${mime};base64,${data.toString('base64')}`
-  } catch {
-    return null
-  }
-})
-
-ipcMain.handle('dialog:selectFolder', async () => {
-  if (!win) return null
-  const result = await dialog.showOpenDialog(win, {
-    properties: ['openDirectory', 'createDirectory'],
-    title: 'Selecione a Pasta de Saída',
-  })
-  if (result.canceled || result.filePaths.length === 0) return null
-  return result.filePaths[0]
-})
-
-ipcMain.handle('dialog:selectFolderFiles', async () => {
-  if (!win) return []
-  const result = await dialog.showOpenDialog(win, {
-    properties: ['openDirectory'],
-    title: 'Selecione a Pasta com Mídias para Importar',
-  })
-  if (result.canceled || result.filePaths.length === 0) return []
-  return await scanDirectoryRecursive(result.filePaths[0])
-})
-
-ipcMain.handle('dialog:selectFiles', async (_event, type: 'images' | 'videos' | 'audio' | 'pdf' | 'all') => {
-  if (!win) return []
-
-  let filters: { name: string; extensions: string[] }[] = []
-
-  if (type === 'images') {
-    filters = [
-      { name: 'Imagens', extensions: ['png', 'jpg', 'jpeg', 'webp', 'avif', 'gif', 'tiff', 'bmp', 'svg', 'ico'] },
-      { name: 'Todos os Arquivos', extensions: ['*'] }
-    ]
-  } else if (type === 'videos') {
-    filters = [
-      { name: 'Vídeos', extensions: ['mp4', 'mkv', 'mov', 'webm', 'avi', 'flv', 'wmv', 'm4v'] },
-      { name: 'Todos os Arquivos', extensions: ['*'] }
-    ]
-  } else if (type === 'audio') {
-    filters = [
-      { name: 'Áudio', extensions: ['mp3', 'wav', 'flac', 'aac', 'm4a', 'ogg', 'opus', 'wma', 'aiff'] },
-      { name: 'Todos os Arquivos', extensions: ['*'] }
-    ]
-  } else if (type === 'pdf') {
-    filters = [
-      { name: 'PDFs & Imagens', extensions: ['pdf', 'png', 'jpg', 'jpeg', 'webp', 'avif'] },
-      { name: 'Todos os Arquivos', extensions: ['*'] }
-    ]
-  } else {
-    filters = [
-      { name: 'Todos os Arquivos Suportados', extensions: ['*'] }
-    ]
-  }
-
-  const result = await dialog.showOpenDialog(win, {
-    properties: ['openFile', 'multiSelections'],
-    filters,
-    title: 'Selecione os Arquivos',
   })
 
-  if (result.canceled) return []
-
-  const fileInfos = []
-  for (const filePath of result.filePaths) {
-    const info = await getFileInfo(filePath)
-    if (info) fileInfos.push(info)
-  }
-
-  return fileInfos
-})
-
-ipcMain.handle('media:processImage', async (_event, options: ImageProcessOptions) => {
-  return await processImage(options)
-})
-
-ipcMain.handle('media:processVideo', async (_event, options: VideoProcessOptions) => {
-  return await processVideo(options, (progress: VideoProgressEvent) => {
-    if (win && !win.isDestroyed()) {
-      win.webContents.send('video:progress', progress)
-    }
+  ipcMain.handle('dialog:selectFolder', async () => {
+    if (!win) return null
+    const { canceled, filePaths } = await dialog.showOpenDialog(win, {
+      title: 'Selecionar Pasta de Destino',
+      properties: ['openDirectory', 'createDirectory'],
+    })
+    if (canceled || filePaths.length === 0) return null
+    return filePaths[0]
   })
-})
 
-ipcMain.handle('media:processAudio', async (_event, options: AudioProcessOptions) => {
-  return await processAudio(options)
-})
+  ipcMain.handle('dialog:selectFolderFiles', async () => {
+    if (!win) return []
+    const { canceled, filePaths } = await dialog.showOpenDialog(win, {
+      title: 'Selecionar Pasta para Importar Arquivos',
+      properties: ['openDirectory'],
+    })
+    if (canceled || filePaths.length === 0) return []
+    return await scanDirectoryRecursive(filePaths[0])
+  })
 
-ipcMain.handle('media:imagesToPdf', async (_event, options: ImagesToPdfOptions) => {
-  return await convertImagesToPdf(options)
-})
+  ipcMain.handle('media:scanDirectory', async (_event, dirPath: string) => {
+    return await scanDirectoryRecursive(dirPath)
+  })
 
-app.whenReady().then(() => {
+  ipcMain.handle('fs:getSystemLocations', async () => {
+    return getSystemLocations()
+  })
 
-  protocol.handle('media', (request) => {
+  ipcMain.handle('fs:listDirectory', async (_event, dirPath: string) => {
+    return await listDirectoryItems(dirPath)
+  })
+
+  ipcMain.handle('shell:openPath', async (_event, dirPath: string) => {
+    return await shell.openPath(dirPath)
+  })
+
+  ipcMain.handle('shell:showItemInFolder', async (_event, filePath: string) => {
+    shell.showItemInFolder(filePath)
+  })
+
+  ipcMain.handle('media:getFileInfo', async (_event, filePath: string) => {
     try {
-      const decodedUrl = decodeURIComponent(request.url.slice('media://'.length))
-      const filePath = decodedUrl.startsWith('/') && process.platform === 'win32'
-        ? decodedUrl.slice(1)
-        : decodedUrl
-      return net.fetch(pathToFileURL(filePath).toString())
+      const stat = await fs.stat(filePath)
+      if (stat.isDirectory()) {
+        return await scanDirectoryRecursive(filePath)
+      }
+      const ext = path.extname(filePath).toLowerCase()
+      const name = path.basename(filePath)
+      const isImg = isImageFile(ext)
+      const isVid = isVideoFile(ext)
+      const isAud = isAudioFile(ext)
+      const isPdf = isPdfFile(ext)
+
+      let thumbnail: string | undefined
+      if (isImg && stat.size < 50 * 1024 * 1024) {
+        try {
+          const thumbBuf = await sharp(filePath)
+            .resize(120, 120, { fit: 'inside' })
+            .jpeg({ quality: 60 })
+            .toBuffer()
+          thumbnail = `data:image/jpeg;base64,${thumbBuf.toString('base64')}`
+        } catch {}
+      }
+
+      return {
+        name,
+        path: filePath,
+        size: stat.size,
+        ext,
+        isImage: isImg,
+        isVideo: isVid,
+        isAudio: isAud,
+        isPdf,
+        thumbnail,
+      }
     } catch {
-      return new Response('Not found', { status: 404 })
+      return null
     }
   })
 
-  createWindow()
+  ipcMain.handle('media:getVideoMetadata', async (_event, filePath: string) => {
+    return await getVideoMetadata(filePath)
+  })
+
+  ipcMain.handle('media:readFileBase64', async (_event, filePath: string) => {
+    try {
+      const buffer = await fs.readFile(filePath)
+      return buffer.toString('base64')
+    } catch {
+      return null
+    }
+  })
+
+  ipcMain.handle('media:processImage', async (_event, options: ImageProcessOptions) => {
+    return await processImage(options)
+  })
+
+  ipcMain.handle('media:processVideo', async (_event, options: VideoProcessOptions) => {
+    const onProgress = (data: VideoProgressEvent) => {
+      win?.webContents.send('video:progress', data)
+    }
+    return await processVideo(options, onProgress)
+  })
+
+  ipcMain.handle('media:processAudio', async (_event, options: AudioProcessOptions) => {
+    return await processAudio(options)
+  })
+
+  ipcMain.handle('media:imagesToPdf', async (_event, options: ImagesToPdfOptions) => {
+    return await convertImagesToPdf(options)
+  })
+
+  ipcMain.handle('media:savePdfPages', async (_event, options: SavePdfPagesOptions) => {
+    return await savePdfPagesToImages(options)
+  })
+
+  ipcMain.handle('app:notify', async (_event, title: string, body: string) => {
+    if (Notification.isSupported()) {
+      new Notification({ title, body }).show()
+    }
+  })
+
+  ipcMain.handle('app:getVersion', () => {
+    return app.getVersion()
+  })
 })

@@ -2,7 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 import type { ImageProcessOptions, ProcessResult } from './services/imageService'
 import type { VideoProcessOptions, VideoProgressEvent, VideoProcessResult } from './services/videoService'
 import type { AudioProcessOptions, AudioProcessResult } from './services/audioService'
-import type { ImagesToPdfOptions, PdfProcessResult } from './services/pdfService'
+import type { ImagesToPdfOptions, PdfProcessResult, SavePdfPagesOptions, SavePdfPagesResult } from './services/pdfService'
 
 export interface FileItemInfo {
   name: string
@@ -39,6 +39,7 @@ export interface ElectronAPI {
   processVideo: (options: VideoProcessOptions) => Promise<VideoProcessResult>
   processAudio: (options: AudioProcessOptions) => Promise<AudioProcessResult>
   imagesToPdf: (options: ImagesToPdfOptions) => Promise<PdfProcessResult>
+  savePdfPages: (options: SavePdfPagesOptions) => Promise<SavePdfPagesResult>
   onVideoProgress: (callback: (event: VideoProgressEvent) => void) => () => void
   notify: (title: string, body: string) => Promise<void>
   getAppVersion: () => Promise<string>
@@ -60,6 +61,7 @@ const api: ElectronAPI = {
   processVideo: (options) => ipcRenderer.invoke('media:processVideo', options),
   processAudio: (options) => ipcRenderer.invoke('media:processAudio', options),
   imagesToPdf: (options) => ipcRenderer.invoke('media:imagesToPdf', options),
+  savePdfPages: (options) => ipcRenderer.invoke('media:savePdfPages', options),
   onVideoProgress: (callback) => {
     const listener = (_event: any, data: VideoProgressEvent) => callback(data)
     ipcRenderer.on('video:progress', listener)

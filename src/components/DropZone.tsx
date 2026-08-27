@@ -123,7 +123,7 @@ export const DropZone: React.FC<DropZoneProps> = ({ activeTab, onFilesSelected, 
       </h3>
       <p className="text-xs text-gray-500 dark:text-gray-400 max-w-md mb-4">
         {activeTab === 'pdf'
-          ? 'Junte múltiplas fotos em um arquivo PDF de alta definição ou solte um PDF'
+          ? 'Junte fotos em um arquivo PDF único ou solte arquivos PDF para extrair cada página em imagem'
           : 'Clique para selecionar arquivos locais ou arraste diretórios completos'}
       </p>
 

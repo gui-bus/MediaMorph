@@ -20,6 +20,25 @@ export interface PdfProcessResult {
   error?: string
 }
 
+export interface SavePdfPagesOptions {
+  pdfPath: string
+  pages: Array<{ pageNumber: number; dataUrl: string }>
+  format: 'png' | 'webp' | 'jpeg' | 'avif' | 'tiff'
+  quality?: number
+  outputPath?: string
+}
+
+export interface SavePdfPagesResult {
+  success: boolean
+  outputDir: string
+  outputPaths: string[]
+  pageCount: number
+  totalOriginalSize: number
+  totalNewSize: number
+  durationMs: number
+  error?: string
+}
+
 export async function convertImagesToPdf(options: ImagesToPdfOptions): Promise<PdfProcessResult> {
   const startTime = Date.now()
 
@@ -50,7 +69,6 @@ export async function convertImagesToPdf(options: ImagesToPdfOptions): Promise<P
 
     for (const imgPath of options.imagePaths) {
       try {
-
         const jpegBuffer = await sharp(imgPath)
           .jpeg({ quality, mozjpeg: true })
           .toBuffer()
@@ -59,7 +77,6 @@ export async function convertImagesToPdf(options: ImagesToPdfOptions): Promise<P
         const { width, height } = embeddedImage.scale(1)
 
         if (options.pageSize === 'a4') {
-
           const page = pdfDoc.addPage(PageSizes.A4)
           const pageWidth = page.getWidth()
           const pageHeight = page.getHeight()
@@ -80,7 +97,6 @@ export async function convertImagesToPdf(options: ImagesToPdfOptions): Promise<P
             height: imgH,
           })
         } else {
-
           const page = pdfDoc.addPage([width, height])
           page.drawImage(embeddedImage, {
             x: 0,
@@ -116,6 +132,79 @@ export async function convertImagesToPdf(options: ImagesToPdfOptions): Promise<P
       pageCount: 0,
       durationMs: Date.now() - startTime,
       error: err.message || 'Falha ao gerar PDF',
+    }
+  }
+}
+
+export async function savePdfPagesToImages(options: SavePdfPagesOptions): Promise<SavePdfPagesResult> {
+  const startTime = Date.now()
+
+  try {
+    if (!options.pages || options.pages.length === 0) {
+      throw new Error('Nenhuma página renderizada para salvar')
+    }
+
+    let origSize = 0
+    try {
+      const st = await fs.stat(options.pdfPath)
+      origSize = st.size
+    } catch {}
+
+    const parsedPdf = path.parse(options.pdfPath)
+    const targetDir = options.outputPath || path.join(parsedPdf.dir, 'optimized')
+    await fs.mkdir(targetDir, { recursive: true })
+
+    const outputPaths: string[] = []
+    let totalNewSize = 0
+    const ext = options.format.toLowerCase()
+    const quality = options.quality || 85
+
+    for (const p of options.pages) {
+      const base64Data = p.dataUrl.replace(/^data:image\/\w+;base64,/, '')
+      const imageBuffer = Buffer.from(base64Data, 'base64')
+
+      let pipeline = sharp(imageBuffer)
+
+      if (ext === 'png') {
+        pipeline = pipeline.png({ compressionLevel: 9 })
+      } else if (ext === 'webp') {
+        pipeline = pipeline.webp({ quality })
+      } else if (ext === 'jpeg' || ext === 'jpg') {
+        pipeline = pipeline.jpeg({ quality, mozjpeg: true })
+      } else if (ext === 'avif') {
+        pipeline = pipeline.avif({ quality })
+      } else if (ext === 'tiff') {
+        pipeline = pipeline.tiff({ quality })
+      }
+
+      const outName = `${parsedPdf.name}_pagina_${String(p.pageNumber).padStart(3, '0')}.${ext}`
+      const outPath = path.join(targetDir, outName)
+
+      await pipeline.toFile(outPath)
+      const st = await fs.stat(outPath)
+      totalNewSize += st.size
+      outputPaths.push(outPath)
+    }
+
+    return {
+      success: true,
+      outputDir: targetDir,
+      outputPaths,
+      pageCount: options.pages.length,
+      totalOriginalSize: origSize,
+      totalNewSize,
+      durationMs: Date.now() - startTime,
+    }
+  } catch (err: any) {
+    return {
+      success: false,
+      outputDir: '',
+      outputPaths: [],
+      pageCount: 0,
+      totalOriginalSize: 0,
+      totalNewSize: 0,
+      durationMs: Date.now() - startTime,
+      error: err.message || 'Falha ao salvar páginas do PDF como imagem',
     }
   }
 }
