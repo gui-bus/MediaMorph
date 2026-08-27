@@ -134,6 +134,23 @@ export const IntegratedFileExplorer: React.FC<IntegratedFileExplorerProps> = ({ 
   const mediaFiles = filteredItems.filter((item) => !item.isDirectory)
   const folders = filteredItems.filter((item) => item.isDirectory)
 
+  const getLocationName = (loc: SystemLocation) => {
+    switch (loc.icon) {
+      case 'downloads':
+        return t('explorer.downloads')
+      case 'desktop':
+        return t('explorer.desktop')
+      case 'pictures':
+        return t('explorer.pictures')
+      case 'videos':
+        return t('explorer.videos')
+      case 'documents':
+        return t('explorer.documents')
+      default:
+        return t('explorer.localDisk')
+    }
+  }
+
   const getSystemIcon = (iconName: string) => {
     switch (iconName) {
       case 'downloads':
@@ -153,7 +170,7 @@ export const IntegratedFileExplorer: React.FC<IntegratedFileExplorerProps> = ({ 
 
   return (
     <div className="bg-surface border border-border rounded-2xl flex flex-col h-full overflow-hidden shadow-sm transition-colors sticky top-20">
-      <div className="p-3.5 px-4 border-b border-border flex items-center justify-between bg-surface/90">
+      <div className="p-3.5 px-4 border-b border-border flex flex-col gap-2.5 bg-surface/90">
         <div className="flex items-center gap-2">
           <OpenFolderSvg className="h-4 w-4" />
           <h3 className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider">
@@ -163,10 +180,10 @@ export const IntegratedFileExplorer: React.FC<IntegratedFileExplorerProps> = ({ 
 
         <button
           onClick={handleAddAllMedia}
-          className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-[11px] transition-all shadow-sm shrink-0"
+          className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white font-semibold text-xs transition-all shadow-sm"
           title={t('explorer.scanFolder')}
         >
-          <Layers className="h-3 w-3" />
+          <Layers className="h-3.5 w-3.5" />
           <span>+ {t('explorer.scanFolder')}</span>
         </button>
       </div>
@@ -190,7 +207,7 @@ export const IntegratedFileExplorer: React.FC<IntegratedFileExplorerProps> = ({ 
                 title={loc.path}
               >
                 {getSystemIcon(loc.icon)}
-                <span className="truncate">{loc.name}</span>
+                <span className="truncate">{getLocationName(loc)}</span>
               </button>
             )
           })}
