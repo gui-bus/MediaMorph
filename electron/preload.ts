@@ -2,7 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 import type { ImageProcessOptions, ProcessResult } from './services/imageService'
 import type { VideoProcessOptions, VideoProgressEvent, VideoProcessResult } from './services/videoService'
 import type { AudioProcessOptions, AudioProcessResult } from './services/audioService'
-import type { ImagesToPdfOptions, PdfProcessResult, SavePdfPagesOptions, SavePdfPagesResult, MergePdfsOptions, SplitPdfOptions } from './services/pdfService'
+import type { ImagesToPdfOptions, PdfProcessResult, SavePdfPagesOptions, SavePdfPagesResult, MergePdfsOptions, SplitPdfOptions, CompressPdfOptions } from './services/pdfService'
 
 export interface FileItemInfo {
   name: string
@@ -42,6 +42,7 @@ export interface ElectronAPI {
   savePdfPages: (options: SavePdfPagesOptions) => Promise<SavePdfPagesResult>
   mergePdfs: (options: MergePdfsOptions) => Promise<PdfProcessResult>
   splitPdf: (options: SplitPdfOptions) => Promise<PdfProcessResult>
+  compressPdf: (options: CompressPdfOptions) => Promise<PdfProcessResult>
   onVideoProgress: (callback: (event: VideoProgressEvent) => void) => () => void
   notify: (title: string, body: string) => Promise<void>
   getAppVersion: () => Promise<string>
@@ -66,6 +67,7 @@ const api: ElectronAPI = {
   savePdfPages: (options) => ipcRenderer.invoke('media:savePdfPages', options),
   mergePdfs: (options) => ipcRenderer.invoke('media:mergePdfs', options),
   splitPdf: (options) => ipcRenderer.invoke('media:splitPdf', options),
+  compressPdf: (options) => ipcRenderer.invoke('media:compressPdf', options),
   onVideoProgress: (callback) => {
     const listener = (_event: any, data: VideoProgressEvent) => callback(data)
     ipcRenderer.on('video:progress', listener)

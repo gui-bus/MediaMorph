@@ -113,7 +113,9 @@ export const QueueSummary: React.FC<QueueSummaryProps> = ({
               <Play className="h-4 w-4 fill-white" />
               <span>
                 {isPdf
-                  ? pdfMode === 'pdf_to_images'
+                  ? pdfMode === 'compress_pdf'
+                    ? `Comprimir ${pendingFiles.length} PDF(s)`
+                    : pdfMode === 'pdf_to_images'
                     ? `Extrair Imagens (${pendingFiles.length} PDFs)`
                     : pdfMode === 'merge_split_pdf'
                     ? `Processar (${pendingFiles.length} PDFs)`

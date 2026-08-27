@@ -22,6 +22,8 @@ if (typeof window !== 'undefined') {
 export interface ExtractedPage {
   pageNumber: number
   dataUrl: string
+  width?: number
+  height?: number
 }
 
 export async function extractPagesFromPdf(
@@ -51,6 +53,7 @@ export async function extractPagesFromPdf(
   for (let i = 1; i <= numPages; i++) {
     const page = await pdf.getPage(i)
     const viewport = page.getViewport({ scale })
+    const unscaledViewport = page.getViewport({ scale: 1.0 })
 
     const canvas = document.createElement('canvas')
     canvas.width = viewport.width
@@ -68,6 +71,8 @@ export async function extractPagesFromPdf(
       pages.push({
         pageNumber: i,
         dataUrl,
+        width: unscaledViewport.width,
+        height: unscaledViewport.height,
       })
     }
 

@@ -298,6 +298,7 @@ export function App() {
 
     let batchSavedBytes = 0
     let batchCompletedCount = 0
+    let fileIndex = 1
     const newHistoryItems: HistoryItem[] = []
 
     if (activeTab === 'pdf') {
@@ -374,6 +375,99 @@ export function App() {
           setFiles((prev) =>
             prev.map((f) => ({ ...f, status: 'error', error: err.message || 'Erro ao gerar PDF' }))
           )
+        }
+      } else if (pdfSettings.mode === 'compress_pdf') {
+        const pdfItems = files.filter((f) => f.isPdf)
+
+        for (const item of pdfItems) {
+          setFiles((prev) =>
+            prev.map((f) => (f.id === item.id ? { ...f, status: 'processing', progress: 5 } : f))
+          )
+
+          try {
+            const base64 = await (window as any).electronAPI.readFileBase64(item.path)
+            if (!base64) throw new Error('Não foi possível ler o arquivo PDF')
+
+            const scale = (pdfSettings.compressQuality || 70) >= 80 ? 2.0 : 1.5
+            const pages = await extractPagesFromPdf(
+              base64,
+              scale,
+              (curr, tot) => {
+                setFiles((prev) =>
+                  prev.map((f) =>
+                    f.id === item.id
+                      ? { ...f, progress: Math.min(80, Math.round((curr / tot) * 75)) }
+                      : f
+                  )
+                )
+              }
+            )
+
+            const customOut = buildCustomOutputPath(item.path, 'pdf', fileIndex++)
+            const compressRes = await (window as any).electronAPI.compressPdf({
+              pdfPath: item.path,
+              pages,
+              quality: pdfSettings.compressQuality || 70,
+              outputPath: customOut,
+            })
+
+            if (compressRes.success) {
+              batchCompletedCount += 1
+              const savedBytes = Math.max(0, compressRes.originalTotalSize - compressRes.newSize)
+              batchSavedBytes += savedBytes
+              const savingsPercent =
+                compressRes.originalTotalSize > 0
+                  ? Number((((compressRes.originalTotalSize - compressRes.newSize) / compressRes.originalTotalSize) * 100).toFixed(1))
+                  : 0
+
+              setFiles((prev) =>
+                prev.map((f) => {
+                  if (f.id === item.id) {
+                    return {
+                      ...f,
+                      status: 'completed',
+                      progress: 100,
+                      result: {
+                        outputPath: compressRes.outputPath,
+                        newSize: compressRes.newSize,
+                        savedBytes,
+                        savingsPercent,
+                        durationMs: compressRes.durationMs,
+                      },
+                    }
+                  }
+                  return f
+                })
+              )
+
+              newHistoryItems.push({
+                id: `hist_${Date.now()}_${item.id}`,
+                name: `Compressão: ${item.name} (-${savingsPercent}%)`,
+                originalSize: compressRes.originalTotalSize,
+                newSize: compressRes.newSize,
+                savingsPercent,
+                outputPath: compressRes.outputPath,
+                type: 'pdf',
+                timestamp: Date.now(),
+              })
+            } else {
+              setFiles((prev) =>
+                prev.map((f) =>
+                  f.id === item.id
+                    ? { ...f, status: 'error', error: compressRes.error || 'Falha ao comprimir PDF' }
+                    : f
+                )
+              )
+            }
+          } catch (err: any) {
+            setFiles((prev) =>
+              prev.map((f) =>
+                f.id === item.id
+                  ? { ...f, status: 'error', error: err.message || 'Falha ao comprimir PDF' }
+                  : f
+              )
+            )
+          }
         }
       } else if (pdfSettings.mode === 'merge_split_pdf') {
         const pdfItems = files.filter((f) => f.isPdf)
@@ -589,7 +683,6 @@ export function App() {
       return
     }
 
-    let fileIndex = 1
     for (const item of pending) {
       while (isPausedRef.current) {
         await new Promise((r) => setTimeout(r, 200))
@@ -603,7 +696,7 @@ export function App() {
         if (item.isImage) {
           const targetFormat = (item.customSettings?.format || imageSettings.format) as any
           const targetQuality = item.customSettings?.quality || imageSettings.quality
-          const ext = targetFormat === 'jpeg' ? 'jpg' : targetFormat
+          const ext = targetFormat === 'original' ? item.ext.replace('.', '') : targetFormat === 'jpeg' ? 'jpg' : targetFormat
           const customOut = buildCustomOutputPath(item.path, ext, fileIndex++)
 
           const result = await (window as any).electronAPI.processImage({

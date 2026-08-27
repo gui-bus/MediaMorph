@@ -15,6 +15,7 @@ export const ImageSettings: React.FC<ImageSettingsProps> = ({ settings, onChange
   const [showAdjustments, setShowAdjustments] = useState(false)
 
   const formatOptions: SelectOption[] = [
+    { value: 'original', label: 'Manter Formato (Modo Compressor TinyPNG)', desc: 'Comprime PNG, JPG, WebP no mesmo formato com forte redução de MB/KB', badge: 'TinyPNG' },
     { value: 'webp', label: 'WebP', desc: 'Formato moderno, ultraleve e recomendado para web', badge: 'Recomendado' },
     { value: 'avif', label: 'AVIF', desc: 'Compressão extrema de nova geração (até 90% menor)', badge: 'Menor Tamanho' },
     { value: 'ico', label: 'ICO (Ícone Windows)', desc: 'Gera arquivos .ico para programas e atalhos do Windows', badge: 'Ícone .ico' },

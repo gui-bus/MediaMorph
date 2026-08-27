@@ -9,7 +9,7 @@ import ffmpeg from 'fluent-ffmpeg'
 import { processImage, ImageProcessOptions } from './services/imageService'
 import { processVideo, VideoProcessOptions, VideoProgressEvent, getVideoMetadata } from './services/videoService'
 import { processAudio, AudioProcessOptions } from './services/audioService'
-import { convertImagesToPdf, ImagesToPdfOptions, savePdfPagesToImages, SavePdfPagesOptions, mergePdfs, MergePdfsOptions, splitPdf, SplitPdfOptions } from './services/pdfService'
+import { convertImagesToPdf, ImagesToPdfOptions, savePdfPagesToImages, SavePdfPagesOptions, mergePdfs, MergePdfsOptions, splitPdf, SplitPdfOptions, compressPdf, CompressPdfOptions } from './services/pdfService'
 
 if (process.platform === 'win32') {
   app.setAppUserModelId('com.mediamorph.app')
@@ -564,6 +564,10 @@ app.whenReady().then(() => {
 
   ipcMain.handle('media:splitPdf', async (_event, options: SplitPdfOptions) => {
     return await splitPdf(options)
+  })
+
+  ipcMain.handle('media:compressPdf', async (_event, options: CompressPdfOptions) => {
+    return await compressPdf(options)
   })
 
   ipcMain.handle('app:notify', async (_event, title: string, body: string) => {

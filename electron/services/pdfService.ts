@@ -50,6 +50,13 @@ export interface SplitPdfOptions {
   outputPath?: string
 }
 
+export interface CompressPdfOptions {
+  pdfPath: string
+  pages: Array<{ pageNumber: number; dataUrl: string; width?: number; height?: number }>
+  quality?: number
+  outputPath?: string
+}
+
 export async function convertImagesToPdf(options: ImagesToPdfOptions): Promise<PdfProcessResult> {
   const startTime = Date.now()
 
@@ -350,6 +357,76 @@ export async function splitPdf(options: SplitPdfOptions): Promise<PdfProcessResu
       pageCount: 0,
       durationMs: Date.now() - startTime,
       error: err.message || 'Falha ao dividir PDF',
+    }
+  }
+}
+
+export async function compressPdf(options: CompressPdfOptions): Promise<PdfProcessResult> {
+  const startTime = Date.now()
+
+  try {
+    if (!options.pages || options.pages.length === 0) {
+      throw new Error('Nenhuma página renderizada para compressão')
+    }
+
+    let originalTotalSize = 0
+    try {
+      const stat = await fs.stat(options.pdfPath)
+      originalTotalSize = stat.size
+    } catch {}
+
+    let outputPath = options.outputPath
+    if (!outputPath) {
+      const parsed = path.parse(options.pdfPath)
+      outputPath = path.join(parsed.dir, 'optimized', `${parsed.name}_comprimido.pdf`)
+    }
+    await fs.mkdir(path.dirname(outputPath), { recursive: true })
+
+    const pdfDoc = await PDFDocument.create()
+    const quality = options.quality || 70
+
+    for (const pageItem of options.pages) {
+      const base64Data = pageItem.dataUrl.replace(/^data:image\/\w+;base64,/, '')
+      const imgBuffer = Buffer.from(base64Data, 'base64')
+
+      const jpegBuffer = await sharp(imgBuffer)
+        .jpeg({ quality, mozjpeg: true })
+        .toBuffer()
+
+      const embeddedImage = await pdfDoc.embedJpg(jpegBuffer)
+      const targetW = pageItem.width || embeddedImage.width
+      const targetH = pageItem.height || embeddedImage.height
+
+      const page = pdfDoc.addPage([targetW, targetH])
+      page.drawImage(embeddedImage, {
+        x: 0,
+        y: 0,
+        width: targetW,
+        height: targetH,
+      })
+    }
+
+    const pdfBytes = await pdfDoc.save()
+    await fs.writeFile(outputPath, pdfBytes)
+    const outStat = await fs.stat(outputPath)
+
+    return {
+      success: true,
+      outputPath,
+      originalTotalSize,
+      newSize: outStat.size,
+      pageCount: pdfDoc.getPageCount(),
+      durationMs: Date.now() - startTime,
+    }
+  } catch (err: any) {
+    return {
+      success: false,
+      outputPath: options.outputPath || '',
+      originalTotalSize: 0,
+      newSize: 0,
+      pageCount: 0,
+      durationMs: Date.now() - startTime,
+      error: err.message || 'Falha ao comprimir PDF',
     }
   }
 }

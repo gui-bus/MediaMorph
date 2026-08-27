@@ -1,6 +1,6 @@
 import React from 'react'
 import { PdfGlobalSettings, PdfExtractFormat, PdfMode } from '../types'
-import { Sliders, FileText, FileStack, Image as ImageIcon, Combine, Scissors } from 'lucide-react'
+import { Sliders, FileText, FileStack, Image as ImageIcon, Combine, Scissors, Minimize2 } from 'lucide-react'
 import { SearchableSelect, SelectOption } from './SearchableSelect'
 
 interface PdfSettingsProps {
@@ -77,6 +77,41 @@ export const PdfSettings: React.FC<PdfSettingsProps> = ({ settings, onChange, di
     },
   ]
 
+  const compressPresetOptions: SelectOption[] = [
+    {
+      value: '70',
+      label: 'Recomendado (70% Qualidade)',
+      desc: 'Excelente equilíbrio entre legibilidade perfeita e grande redução de peso',
+      badge: 'Recomendado',
+    },
+    {
+      value: '85',
+      label: 'Leve / Alta Nitidez (85% Qualidade)',
+      desc: 'Preserva detalhes finos para impressão e leitura de gráficos',
+      badge: 'Alta Fidelidade',
+    },
+    {
+      value: '50',
+      label: 'Extrema (50% Qualidade)',
+      desc: 'Máxima redução para anexos pesados de e-mail ou WhatsApp',
+      badge: 'Super Leve',
+    },
+    {
+      value: 'custom',
+      label: 'Personalizado',
+      desc: 'Defina a taxa exata no controle deslizante abaixo',
+    },
+  ]
+
+  const currentCompressPreset =
+    settings.compressQuality === 70
+      ? '70'
+      : settings.compressQuality === 85
+      ? '85'
+      : settings.compressQuality === 50
+      ? '50'
+      : 'custom'
+
   return (
     <div className="bg-surface border border-border rounded-2xl p-5 shadow-sm space-y-5 transition-colors">
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
@@ -88,6 +123,20 @@ export const PdfSettings: React.FC<PdfSettingsProps> = ({ settings, onChange, di
         </div>
 
         <div className="flex flex-wrap items-center gap-1.5 bg-background p-1 rounded-xl border border-border">
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={() => onChange({ ...settings, mode: 'compress_pdf' })}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              settings.mode === 'compress_pdf'
+                ? 'bg-emerald-500 text-white shadow-sm font-semibold'
+                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-surface'
+            }`}
+          >
+            <Minimize2 className="h-3.5 w-3.5" />
+            Comprimir PDF
+          </button>
+
           <button
             type="button"
             disabled={disabled}
@@ -131,6 +180,69 @@ export const PdfSettings: React.FC<PdfSettingsProps> = ({ settings, onChange, di
           </button>
         </div>
       </div>
+
+      {settings.mode === 'compress_pdf' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="space-y-2">
+            <SearchableSelect
+              label="Preset de Compressão"
+              options={compressPresetOptions}
+              value={currentCompressPreset}
+              onChange={(val) => {
+                if (val !== 'custom') {
+                  onChange({ ...settings, compressQuality: Number(val) })
+                }
+              }}
+              disabled={disabled}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                Nível de Compressão ({settings.compressQuality || 70}%)
+              </label>
+              <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono font-medium">
+                {settings.compressQuality || 70}/100
+              </span>
+            </div>
+
+            <input
+              type="range"
+              min="15"
+              max="95"
+              step="5"
+              disabled={disabled}
+              value={settings.compressQuality || 70}
+              onChange={(e) => onChange({ ...settings, compressQuality: Number(e.target.value) })}
+              className="w-full h-1.5 bg-background rounded-lg appearance-none cursor-pointer accent-emerald-500 disabled:opacity-40"
+            />
+
+            <p className="text-[11px] text-gray-500 dark:text-gray-400">
+              {settings.compressQuality >= 80
+                ? 'Alta fidelidade: reduz o peso mantendo nitidez nítida de texto e imagens.'
+                : settings.compressQuality >= 60
+                ? 'Equilíbrio ideal: comprime substancialmente (50% a 80% menor) sem perda perceptível de leitura.'
+                : 'Compressão agressiva: ideal para anexos pesados de e-mail e mensageiros.'}
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+              <FileText className="h-3.5 w-3.5 text-gray-500 dark:text-gray-400" />
+              Sufixo / Nome Personalizado (Opcional)
+            </label>
+            <input
+              type="text"
+              placeholder="Ex: documento_reduzido.pdf"
+              disabled={disabled}
+              value={settings.customPdfName || ''}
+              onChange={(e) => onChange({ ...settings, customPdfName: e.target.value })}
+              className="w-full bg-background border border-border rounded-xl px-3.5 py-2.5 text-xs text-gray-900 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:border-emerald-500"
+            />
+          </div>
+        </div>
+      )}
 
       {settings.mode === 'images_to_pdf' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">

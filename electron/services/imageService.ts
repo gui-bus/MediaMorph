@@ -7,7 +7,7 @@ import { WatermarkSettings, ImageAdjustments } from '../../src/types'
 export interface ImageProcessOptions {
   inputPath: string
   outputPath?: string
-  format: 'webp' | 'avif' | 'jpeg' | 'png' | 'gif' | 'tiff' | 'ico'
+  format: 'original' | 'webp' | 'avif' | 'jpeg' | 'png' | 'gif' | 'tiff' | 'ico'
   quality: number
   lossless?: boolean
   resizeMode?: 'none' | 'scale' | 'dimensions'
@@ -112,17 +112,29 @@ export async function processImage(options: ImageProcessOptions): Promise<Proces
     const stat = await fs.stat(options.inputPath)
     const originalSize = stat.size
 
+    const inputExt = path.extname(options.inputPath).toLowerCase().replace('.', '')
+    let targetFormat = options.format
+    if (targetFormat === 'original' || !targetFormat) {
+      if (inputExt === 'jpg' || inputExt === 'jpeg') targetFormat = 'jpeg'
+      else if (inputExt === 'png') targetFormat = 'png'
+      else if (inputExt === 'webp') targetFormat = 'webp'
+      else if (inputExt === 'avif') targetFormat = 'avif'
+      else if (inputExt === 'gif') targetFormat = 'gif'
+      else if (inputExt === 'tiff' || inputExt === 'tif') targetFormat = 'tiff'
+      else targetFormat = 'webp'
+    }
+
     let outputPath = options.outputPath
     if (!outputPath) {
       const parsed = path.parse(options.inputPath)
-      const ext = options.format === 'jpeg' ? '.jpg' : `.${options.format}`
+      const ext = targetFormat === 'jpeg' ? '.jpg' : `.${targetFormat}`
       const optimizedDir = path.join(parsed.dir, 'optimized')
       outputPath = path.join(optimizedDir, `${parsed.name}${ext}`)
     }
 
     await fs.mkdir(path.dirname(outputPath), { recursive: true })
 
-    if (options.format === 'ico') {
+    if (targetFormat === 'ico') {
       const pngBuffer = await sharp(options.inputPath)
         .resize(256, 256, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
         .png()
@@ -263,7 +275,7 @@ export async function processImage(options: ImageProcessOptions): Promise<Proces
     const q = Math.max(1, Math.min(100, options.quality))
     const isLossless = !!options.lossless
 
-    switch (options.format) {
+    switch (targetFormat) {
       case 'webp':
         pipeline = pipeline.webp({
           quality: q,

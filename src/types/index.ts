@@ -31,7 +31,7 @@ export interface FileItem {
   }
 }
 
-export type ImageFormat = 'webp' | 'avif' | 'jpeg' | 'png' | 'gif' | 'tiff' | 'ico'
+export type ImageFormat = 'original' | 'webp' | 'avif' | 'jpeg' | 'png' | 'gif' | 'tiff' | 'ico'
 
 export type WatermarkPosition = 'center' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
 
