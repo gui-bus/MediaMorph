@@ -27,8 +27,20 @@ jobs:
         run: npm ci
 
       - name: Build and Package Windows App
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           npm run build:frontend
-          npx electron-builder --win --publish always
+          npx electron-builder --win
+
+      - name: Zip Unpacked Directory
+        shell: pwsh
+        run: |
+          Compress-Archive -Path "release\*\win-unpacked\*" -DestinationPath "release\MediaMorph-Windows-x64.zip"
+
+      - name: Create GitHub Release and Upload Binaries
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release/**/*.exe
+            release/*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
