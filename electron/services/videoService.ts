@@ -93,9 +93,15 @@ export async function processVideo(
     const originalSize = stat.size
 
     let durationSec = 0
+    let originalBitrate = 0
     try {
       const metadata = await probeVideo(options.inputPath)
-      durationSec = metadata.format.duration || 0
+      durationSec = Number(metadata.format.duration) || 0
+      if (metadata.format.bit_rate) {
+        originalBitrate = Math.round(Number(metadata.format.bit_rate) / 1000)
+      } else if (durationSec > 0 && originalSize > 0) {
+        originalBitrate = Math.round((originalSize * 8) / (durationSec * 1000))
+      }
     } catch {}
 
     const isAudioExtraction = options.preset === 'extract_audio' || options.format === 'mp3'
@@ -231,11 +237,31 @@ export async function processVideo(
             command.audioCodec('aac').audioBitrate('96k')
           }
         } else {
-          let crf = options.crf || 23
+          let crf = options.crf || 26
+          let audioKbps = '96k'
+          let maxrateMultiplier = 0.85
+
           if (options.preset === 'high_compression') {
-            crf = 28
+            crf = 30
+            audioKbps = '64k'
+            maxrateMultiplier = 0.65
           } else if (options.preset === 'balanced') {
-            crf = 23
+            crf = 26
+            audioKbps = '96k'
+            maxrateMultiplier = 0.85
+          }
+
+          const outOptions: string[] = [
+            options.gpu && options.gpu !== 'cpu' && options.gpu !== 'auto' ? `-cq ${crf}` : `-crf ${crf}`,
+            '-preset fast',
+            '-pix_fmt yuv420p',
+            '-movflags +faststart',
+          ]
+
+          if (originalBitrate > 100) {
+            const cappedMaxrate = Math.max(150, Math.round(originalBitrate * maxrateMultiplier))
+            outOptions.push('-maxrate', `${cappedMaxrate}k`)
+            outOptions.push('-bufsize', `${Math.round(cappedMaxrate * 1.5)}k`)
           }
 
           if (options.format === 'webm') {
@@ -245,22 +271,17 @@ export async function processVideo(
                 `-crf ${crf}`,
                 '-b:v 0',
                 '-deadline good',
-                '-cpu-used 2'
+                '-cpu-used 2',
               ])
             if (!options.muteAudio) {
-              command.audioCodec('libopus').audioBitrate('128k')
+              command.audioCodec('libopus').audioBitrate(audioKbps)
             }
           } else {
             command
               .videoCodec(vCodec)
-              .outputOptions([
-                options.gpu && options.gpu !== 'cpu' && options.gpu !== 'auto' ? `-cq ${crf}` : `-crf ${crf}`,
-                '-preset medium',
-                '-pix_fmt yuv420p',
-                '-movflags +faststart'
-              ])
+              .outputOptions(outOptions)
             if (!options.muteAudio) {
-              command.audioCodec('aac').audioBitrate('128k')
+              command.audioCodec('aac').audioBitrate(audioKbps)
             }
           }
         }
@@ -307,8 +328,23 @@ export async function processVideo(
 
       command.on('end', async () => {
         try {
-          const outStat = await fs.stat(outputPath!)
-          const newSize = outStat.size
+          let outStat = await fs.stat(outputPath!)
+          let newSize = outStat.size
+
+          const isSameFormat = path.extname(options.inputPath).toLowerCase() === path.extname(outputPath!).toLowerCase()
+          const hasTransforms = (options.trimStart && options.trimStart.trim()) ||
+                                (options.trimEnd && options.trimEnd.trim()) ||
+                                (options.crop && options.crop !== 'keep') ||
+                                (options.speed && options.speed !== 1.0) ||
+                                (options.resolution && options.resolution !== 'original') ||
+                                options.muteAudio
+
+          if (!hasTransforms && isSameFormat && newSize >= originalSize && originalSize > 0) {
+            await fs.copyFile(options.inputPath, outputPath!)
+            outStat = await fs.stat(outputPath!)
+            newSize = outStat.size
+          }
+
           const savedBytes = Math.max(0, originalSize - newSize)
           const savingsPercent = originalSize > 0 ? Number(((savedBytes / originalSize) * 100).toFixed(1)) : 0
           const durationMs = Date.now() - startTime
