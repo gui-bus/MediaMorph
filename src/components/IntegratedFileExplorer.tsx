@@ -169,7 +169,7 @@ export const IntegratedFileExplorer: React.FC<IntegratedFileExplorerProps> = ({ 
   }
 
   return (
-    <div className="bg-surface border border-border rounded-2xl flex flex-col h-full overflow-hidden shadow-sm transition-colors sticky top-20">
+    <div className="bg-surface border border-border rounded-2xl flex flex-col overflow-hidden shadow-sm transition-colors sticky top-20">
       <div className="p-3.5 px-4 border-b border-border flex flex-col gap-2.5 bg-surface/90">
         <div className="flex items-center gap-2">
           <OpenFolderSvg className="h-4 w-4" />
@@ -317,11 +317,10 @@ export const IntegratedFileExplorer: React.FC<IntegratedFileExplorerProps> = ({ 
 
                 <button
                   onClick={() => onAddFiles([file])}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500 hover:text-white text-xs font-semibold transition-all shrink-0 shadow-sm"
+                  className="p-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all shrink-0 shadow-sm flex items-center justify-center"
                   title={t('explorer.addSelected')}
                 >
-                  <Plus className="h-3 w-3" />
-                  <span>+</span>
+                  <Plus className="h-3.5 w-3.5 stroke-[2.5]" />
                 </button>
               </div>
             ))}
