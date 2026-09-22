@@ -1,19 +1,10 @@
 import path from 'node:path'
 import fs from 'node:fs/promises'
 import ffmpeg from 'fluent-ffmpeg'
-import ffmpegInstaller from '@ffmpeg-installer/ffmpeg'
-import ffprobeInstaller from '@ffprobe-installer/ffprobe'
+import { getFfmpegPath, getFfprobePath } from './ffmpegHelper'
 
-function getBinaryPath(installerPath: string): string {
-  let resolved = installerPath
-  if (resolved.includes('app.asar')) {
-    resolved = resolved.replace('app.asar', 'app.asar.unpacked')
-  }
-  return resolved
-}
-
-ffmpeg.setFfmpegPath(getBinaryPath(ffmpegInstaller.path))
-ffmpeg.setFfprobePath(getBinaryPath(ffprobeInstaller.path))
+ffmpeg.setFfmpegPath(getFfmpegPath())
+ffmpeg.setFfprobePath(getFfprobePath())
 
 export interface AudioProcessOptions {
   jobId: string

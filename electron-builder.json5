@@ -1,4 +1,3 @@
-
 {
   "appId": "com.mediamorph.app",
   "productName": "MediaMorph",
@@ -17,6 +16,16 @@
     "!node_modules/*/{test,__tests__,tests,example,examples}",
     "!node_modules/*.d.ts",
     "!node_modules/.bin"
+  ],
+  "extraResources": [
+    {
+      "from": "node_modules/@ffmpeg-installer/win32-x64/ffmpeg.exe",
+      "to": "bin/ffmpeg.exe"
+    },
+    {
+      "from": "node_modules/@ffprobe-installer/win32-x64/ffprobe.exe",
+      "to": "bin/ffprobe.exe"
+    }
   ],
   "asar": true,
   "asarUnpack": [

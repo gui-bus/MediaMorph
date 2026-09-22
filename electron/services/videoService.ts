@@ -1,23 +1,11 @@
 import path from 'node:path'
 import fs from 'node:fs/promises'
 import ffmpeg from 'fluent-ffmpeg'
-import ffmpegInstaller from '@ffmpeg-installer/ffmpeg'
-import ffprobeInstaller from '@ffprobe-installer/ffprobe'
 import { GpuAcceleration, VideoCrop, AudioExtractFormat } from '../../src/types'
+import { getFfmpegPath, getFfprobePath } from './ffmpegHelper'
 
-function getBinaryPath(installerPath: string): string {
-  let resolved = installerPath
-  if (resolved.includes('app.asar')) {
-    resolved = resolved.replace('app.asar', 'app.asar.unpacked')
-  }
-  return resolved
-}
-
-const ffmpegPath = getBinaryPath(ffmpegInstaller.path)
-const ffprobePath = getBinaryPath(ffprobeInstaller.path)
-
-ffmpeg.setFfmpegPath(ffmpegPath)
-ffmpeg.setFfprobePath(ffprobePath)
+ffmpeg.setFfmpegPath(getFfmpegPath())
+ffmpeg.setFfprobePath(getFfprobePath())
 
 export interface VideoProcessOptions {
   jobId: string

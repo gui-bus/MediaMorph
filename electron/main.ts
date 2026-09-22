@@ -4,20 +4,15 @@ import fs from 'node:fs/promises'
 import fsSync from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import sharp from 'sharp'
-import ffmpegInstaller from '@ffmpeg-installer/ffmpeg'
 import ffmpeg from 'fluent-ffmpeg'
+import { initFfmpeg } from './services/ffmpegHelper'
 import { processImage, ImageProcessOptions } from './services/imageService'
 import { processVideo, VideoProcessOptions, VideoProgressEvent, getVideoMetadata } from './services/videoService'
 import { processAudio, AudioProcessOptions } from './services/audioService'
 import { convertImagesToPdf, ImagesToPdfOptions, savePdfPagesToImages, SavePdfPagesOptions, mergePdfs, MergePdfsOptions, splitPdf, SplitPdfOptions, compressPdf, CompressPdfOptions } from './services/pdfService'
 
-if (process.platform === 'win32') {
-  app.setAppUserModelId('MediaMorph')
-}
-
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
-
 process.env.APP_ROOT = path.join(__dirname, '..')
 
 export const MAIN_DIST = path.join(process.env.APP_ROOT, 'dist-electron')
@@ -27,14 +22,11 @@ process.env.VITE_PUBLIC = process.env.VITE_DEV_SERVER_URL
   ? path.join(process.env.APP_ROOT, 'public')
   : RENDERER_DIST
 
-function getFfmpegPath(): string {
-  let installerPath = ffmpegInstaller.path
-  if (app.isPackaged) {
-    installerPath = installerPath.replace('app.asar', 'app.asar.unpacked')
-  }
-  return installerPath
+if (process.platform === 'win32') {
+  app.setAppUserModelId('MediaMorph')
 }
-ffmpeg.setFfmpegPath(getFfmpegPath())
+
+initFfmpeg()
 
 let win: BrowserWindow | null = null
 
